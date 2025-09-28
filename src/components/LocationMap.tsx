@@ -78,20 +78,20 @@ export default function LocationMap({ query, height = 200, zoom = 12 }: Location
 
   if (error) {
     return (
-      <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
+      <div className="text-sm text-accent-dark dark:text-accent-light">{error}</div>
     );
   }
 
   if (!center) {
     return (
       <div className="w-full flex items-center justify-center" style={mapStyle}>
-        <div className="text-slate-500 dark:text-slate-400 text-sm">Lade Karte…</div>
+        <div className="text-primary-300 dark:text-primary-100 text-sm">Lade Karte…</div>
       </div>
     );
   }
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-white/30 dark:border-slate-700/50 shadow-sm" style={mapStyle}>
+    <div className="w-full overflow-hidden rounded-2xl border border-primary-50/30 dark:border-primary-200/50 shadow-sm" style={mapStyle}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <MapContainer center={[center.lat, center.lng]} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
         <TileLayer

@@ -1,3 +1,24 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-primary: #123a98;
+  --color-primary-light: #f7fcfa;
+  --color-primary-medium: #485c8c;
+  --color-primary-dark: #011541;
+  --color-accent-light: #a5bad7;
+  --color-accent-medium: #042061;
+  --color-accent-dark: #192f61;
+}
+
+.dark {
+  --color-primary: #a5bad7;
+  --color-primary-light: #011541;
+  --color-primary-medium: #485c8c;
+  --color-primary-dark: #f7fcfa;
+  --color-accent-light: #192f61;
+  --color-accent-medium: #042061;
+  --color-accent-dark: #123a98;
+}
+
