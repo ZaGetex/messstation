@@ -32,12 +32,12 @@ export default function DateTime() {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-2 sm:p-4">
       <div className="text-center">
-        <div className="text-2xl font-bold text-text-primary dark:text-text-light mb-1">
+        <div className="text-lg sm:text-2xl font-bold text-text-primary dark:text-text-light mb-1">
           {formatTime(currentTime)}
         </div>
-        <div className="text-sm text-primary-600 dark:text-primary-100">
+        <div className="text-xs sm:text-sm text-primary-600 dark:text-primary-100">
           {formatDate(currentTime)}
         </div>
       </div>
