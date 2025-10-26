@@ -17,6 +17,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import DateTime from "../../components/DateTime";
 import DownloadButton from "../../components/DownloadButton";
+import { useTheme } from "../../contexts/ThemeContext";
 // @ts-ignore - chartjs-plugin-trendline doesn't have TypeScript definitions
 import trendline from "chartjs-plugin-trendline";
 
@@ -80,6 +81,7 @@ function useFakeData(range: RangeKey) {
 export default function HistoryPage() {
   const [range, setRange] = useState<RangeKey>("1h");
   const [isMobile, setIsMobile] = useState(false);
+  const { theme } = useTheme();
   const { labels, temperature, humidity, pressure } = useFakeData(range);
 
   useEffect(() => {
@@ -185,7 +187,7 @@ export default function HistoryPage() {
         legend: {
           position: "bottom" as const,
           labels: {
-            color: "#011541",
+            color: theme === "dark" ? "#e5e7eb" : "#011541",
             font: {
               size: isMobile ? 8 : 12,
             },
@@ -206,27 +208,37 @@ export default function HistoryPage() {
       scales: {
         x: {
           ticks: {
-            color: "#042061",
+            color: theme === "dark" ? "#d1d5db" : "#042061",
             font: {
               size: isMobile ? 8 : 11,
             },
           },
-          grid: { color: "rgba(165, 186, 215, 0.2)" },
+          grid: {
+            color:
+              theme === "dark"
+                ? "rgba(75, 85, 99, 0.3)"
+                : "rgba(165, 186, 215, 0.2)",
+          },
         },
         y: {
           position: "left" as const,
           ticks: {
-            color: "#042061",
+            color: theme === "dark" ? "#d1d5db" : "#042061",
             font: {
               size: isMobile ? 8 : 11,
             },
           },
-          grid: { color: "rgba(165, 186, 215, 0.2)" },
+          grid: {
+            color:
+              theme === "dark"
+                ? "rgba(75, 85, 99, 0.3)"
+                : "rgba(165, 186, 215, 0.2)",
+          },
         },
         y2: {
           position: "right" as const,
           ticks: {
-            color: "#042061",
+            color: theme === "dark" ? "#d1d5db" : "#042061",
             font: {
               size: isMobile ? 8 : 11,
             },
@@ -235,7 +247,7 @@ export default function HistoryPage() {
         },
       },
     }),
-    [isMobile]
+    [isMobile, theme]
   );
 
   return (

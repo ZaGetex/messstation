@@ -46,22 +46,20 @@ export default function RootLayout({
               <div className="flex justify-center sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:top-0">
                 <div className="flex items-center justify-center h-16 gap-4 sm:h-24">
                   <Logo
-                    width={500}
-                    height={200}
+                    width={300}
+                    height={120}
                     className="flex items-center h-full"
                   />
-                  <div
-                    className="w-[2px] bg-gray-400 dark:bg-gray-600 h-8 sm:h-12"
-                  ></div>
+                  <div className="w-[2px] bg-gray-400 dark:bg-gray-600 h-8 sm:h-12"></div>
                   <Logo
-                    width={500}
-                    height={200}
+                    width={300}
+                    height={120}
                     className="flex items-center h-full"
                   />
                 </div>
               </div>
               {/* Datum oben rechts */}
-              <div className="flex justify-end">
+              <div className="flex justify-center sm:justify-end">
                 {/* TODO: Messtation Datum und Uhrzeit anzeigen*/}
                 <DateTime />
               </div>
