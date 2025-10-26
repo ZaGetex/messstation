@@ -189,7 +189,7 @@ export default function HistoryPage() {
             font: {
               size: isMobile ? 8 : 12,
             },
-            padding: isMobile ? 4 : 12,
+            padding: isMobile ? 6 : 12,
             boxWidth: isMobile ? 8 : 16,
           },
         },
@@ -239,21 +239,21 @@ export default function HistoryPage() {
   );
 
   return (
-    <main className="flex flex-col items-center w-full min-h-screen p-4 bg-gradient-to-br from-background-light via-accent-light to-primary-50 dark:from-background-dark dark:via-primary-600 dark:to-primary-700 sm:p-6 md:p-10">
-      <header className="mt-16 sm:mt-24 mb-6 sm:mb-10 flex flex-col sm:flex-row w-full max-w-7xl items-start sm:items-center justify-between gap-4">
+    <main className="flex flex-col items-center w-full min-h-screen p-1 bg-gradient-to-br from-background-light via-accent-light to-primary-50 dark:from-background-dark dark:via-primary-600 dark:to-primary-700 sm:p-6 md:p-10">
+      <header className="flex flex-col items-start justify-between w-full gap-4 mt-16 mb-6 sm:mt-24 sm:mb-10 sm:flex-row max-w-7xl sm:items-center">
         <div className="flex items-center gap-4">
           <Link
             href="/"
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-background-light/70 dark:bg-primary-600/60 text-text-primary dark:text-text-light border border-primary-50/30 dark:border-primary-200/50 hover:bg-background-light/90 dark:hover:bg-primary-500/70 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 transition-colors border sm:px-4 rounded-xl bg-background-light/70 dark:bg-primary-600/60 text-text-primary dark:text-text-light border-primary-50/30 dark:border-primary-200/50 hover:bg-background-light/90 dark:hover:bg-primary-500/70"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Zurück</span>
           </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-light">
+          <h1 className="text-xl font-bold sm:text-2xl text-text-primary dark:text-text-light">
             Verlauf
           </h1>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+        <div className="flex flex-col items-start w-full gap-4 sm:flex-row sm:items-center sm:w-auto">
           <div className="flex flex-wrap items-center gap-2">
             {ranges.map((r) => (
               <button
@@ -273,9 +273,9 @@ export default function HistoryPage() {
         </div>
       </header>
 
-      <section className="w-full max-w-7xl grid grid-cols-1 gap-6 px-4 sm:px-0">
+      <section className="grid w-full grid-cols-1 gap-6 px-1 max-w-7xl sm:px-4">
         <div
-          className="bg-background-light/60 dark:bg-primary-600/60 backdrop-blur-md border border-primary-50/30 dark:border-primary-200/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-lg"
+          className="p-1 border shadow-lg sm:p-4 bg-background-light/60 dark:bg-primary-600/60 backdrop-blur-md border-primary-50/30 dark:border-primary-200/50 rounded-2xl sm:rounded-3xl sm:p-6"
           style={{ height: isMobile ? 400 : 420 }}
         >
           <Line data={data} options={options} />

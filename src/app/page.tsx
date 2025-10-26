@@ -92,8 +92,8 @@ export default function Home() {
 
   return (
     <>
-      <header className="mt-16 sm:mt-24 mb-8 sm:mb-12 text-center px-4">
-        <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-medium dark:from-accent-light dark:to-primary-400">
+      <header className="px-4 mt-16 mb-8 text-center sm:mt-24 sm:mb-12">
+        <h1 className="text-3xl font-black text-transparent sm:text-5xl md:text-7xl bg-clip-text bg-gradient-to-r from-primary-400 to-accent-medium dark:from-accent-light dark:to-primary-400">
           Barkasse Messstation Dashboard
         </h1>
         <p className="mt-4 text-base sm:text-lg md:text-xl text-primary-600 dark:text-primary-50">
@@ -101,7 +101,7 @@ export default function Home() {
         </p>
       </header>
 
-      <section className="grid w-full grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-8 max-w-7xl px-4 sm:px-0">
+      <section className="grid w-full grid-cols-1 gap-4 px-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-8 max-w-7xl sm:px-0">
         {cardData.map((card, index) => {
           const Icon = card.icon;
           const timeStatus = getTimeStatus(card.lastUpdated);
@@ -115,7 +115,7 @@ export default function Home() {
               >
                 <Icon className={`${card.iconColor} w-6 h-6 sm:w-8 sm:h-8`} />
               </div>
-              <h2 className="text-sm sm:text-base font-medium text-primary-600 dark:text-primary-50">
+              <h2 className="text-sm font-medium sm:text-base text-primary-600 dark:text-primary-50">
                 {card.title}
               </h2>
               <p
@@ -125,7 +125,7 @@ export default function Home() {
               </p>
 
               {/* Update indicator */}
-              <div className="flex items-center gap-2 mt-2 sm:mt-3 text-xs text-primary-500 dark:text-primary-300">
+              <div className="flex items-center gap-2 mt-2 text-xs sm:mt-3 text-primary-500 dark:text-primary-300">
                 <div
                   className={`w-2 h-2 rounded-full ${timeStatus.color}`}
                 ></div>
@@ -136,26 +136,26 @@ export default function Home() {
         })}
       </section>
 
-      <section className="w-full max-w-7xl mt-6 sm:mt-8 px-4 sm:px-0">
-        <h3 className="mb-3 text-xs sm:text-sm font-semibold tracking-wide text-primary-600 dark:text-primary-50 uppercase">
+      <section className="w-full px-4 mt-6 max-w-7xl sm:mt-8 sm:px-0">
+        <h3 className="mb-3 text-xs font-semibold tracking-wide uppercase sm:text-sm text-primary-600 dark:text-primary-50">
           Karte | 52° 31' 12.0288'' N
         </h3>{" "}
         {/*TODO: Dynmaische Koordinaten aus der Datenbank*/}
         <LocationMap query={data.location} height={280} />
       </section>
 
-      <section className="flex flex-col gap-4 sm:gap-6 mt-12 sm:mt-16 mb-8 sm:flex-row px-4 sm:px-0">
+      <section className="flex flex-col gap-4 px-4 mt-12 mb-8 sm:gap-6 sm:mt-16 sm:flex-row sm:px-0">
         <DownloadButton />
         <Link
           href="/history"
-          className="px-6 sm:px-8 py-3 sm:py-4 font-semibold transition-transform transform border shadow-lg bg-background-light/60 dark:bg-primary-600/60 backdrop-blur-sm text-text-primary dark:text-text-light rounded-xl sm:rounded-2xl border-primary-50/30 dark:border-primary-200/50 hover:scale-105 hover:-translate-y-1 hover:bg-background-light/80 dark:hover:bg-primary-500/80 focus:outline-none focus:ring-4 focus:ring-primary-400/50 text-center"
+          className="px-6 py-3 font-semibold text-center transition-transform transform border shadow-lg sm:px-8 sm:py-4 bg-background-light/60 dark:bg-primary-600/60 backdrop-blur-sm text-text-primary dark:text-text-light rounded-xl sm:rounded-2xl border-primary-50/30 dark:border-primary-200/50 hover:scale-105 hover:-translate-y-1 hover:bg-background-light/80 dark:hover:bg-primary-500/80 focus:outline-none focus:ring-4 focus:ring-primary-400/50"
         >
           Verlauf ansehen
         </Link>
       </section>
 
       {/* NEU: Verweis auf das übergeordnete Projekt */}
-      <p className="mt-3 text-xs sm:text-sm text-primary-600/80 dark:text-primary-50/80 text-center px-4">
+      <p className="px-4 mt-3 text-xs text-center sm:text-sm text-primary-600/80 dark:text-primary-50/80">
         Ein Projekt des{" "}
         <a
           href="https://libertalia-kollektiv.eu/"

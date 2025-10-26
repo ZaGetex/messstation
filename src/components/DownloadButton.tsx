@@ -107,10 +107,10 @@ export default function DownloadButton({
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`flex justify-center items-center relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 font-semibold text-white transition-transform transform shadow-lg bg-gradient-to-r from-primary-400 to-accent-medium rounded-xl sm:rounded-2xl hover:scale-105 hover:shadow-xl hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-primary-400/50 text-sm sm:text-base"
+        className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-transform transform shadow-lg sm:gap-3 sm:px-8 sm:py-4 bg-gradient-to-r from-primary-400 to-accent-medium rounded-xl sm:rounded-2xl hover:scale-105 hover:shadow-xl hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-primary-400/50 sm:text-base"
       >
         <Download className="w-4 h-4 sm:w-5 sm:h-5" />
         <span className="hidden sm:inline">CSV Export</span>
@@ -131,11 +131,11 @@ export default function DownloadButton({
               {/* Header */}
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r from-primary-400 to-accent-medium flex items-center justify-center">
-                    <Download className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full sm:w-12 sm:h-12 bg-gradient-to-r from-primary-400 to-accent-medium">
+                    <Download className="w-4 h-4 text-white sm:w-6 sm:h-6" />
                   </div>
                   <div>
-                    <h2 className="text-lg sm:text-2xl font-bold text-text-primary dark:text-text-light">
+                    <h2 className="text-lg font-bold sm:text-2xl text-text-primary dark:text-text-light">
                       CSV Export
                     </h2>
                     <p className="text-xs sm:text-sm text-primary-600 dark:text-primary-300">
@@ -145,7 +145,7 @@ export default function DownloadButton({
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1 sm:p-2 rounded-full hover:bg-primary-50/50 dark:hover:bg-primary-500/50 transition-colors"
+                  className="p-1 transition-colors rounded-full sm:p-2 hover:bg-primary-50/50 dark:hover:bg-primary-500/50"
                 >
                   <X className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600 dark:text-primary-300" />
                 </button>
@@ -153,7 +153,7 @@ export default function DownloadButton({
 
               {/* Data Type Selection */}
               <div className="mb-6 sm:mb-8">
-                <h3 className="text-base sm:text-lg font-semibold text-text-primary dark:text-text-light mb-3 sm:mb-4 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 mb-3 text-base font-semibold sm:text-lg text-text-primary dark:text-text-light sm:mb-4">
                   <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                   Datentypen auswählen
                 </h3>
@@ -171,10 +171,10 @@ export default function DownloadButton({
                         type="checkbox"
                         checked={selectedDataTypes.includes(option.value)}
                         onChange={() => handleDataTypeToggle(option.value)}
-                        className="mt-1 w-4 h-4 text-primary-400 bg-background-light border-primary-300 rounded focus:ring-primary-400 focus:ring-2"
+                        className="w-4 h-4 mt-1 rounded text-primary-400 bg-background-light border-primary-300 focus:ring-primary-400 focus:ring-2"
                       />
                       <div className="flex-1">
-                        <div className="text-sm sm:text-base font-medium text-text-primary dark:text-text-light">
+                        <div className="text-sm font-medium sm:text-base text-text-primary dark:text-text-light">
                           {option.label}
                         </div>
                         <div className="text-xs sm:text-sm text-primary-600 dark:text-primary-300">
@@ -188,11 +188,11 @@ export default function DownloadButton({
 
               {/* Time Span Selection */}
               <div className="mb-6 sm:mb-8">
-                <h3 className="text-base sm:text-lg font-semibold text-text-primary dark:text-text-light mb-3 sm:mb-4 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 mb-3 text-base font-semibold sm:text-lg text-text-primary dark:text-text-light sm:mb-4">
                   <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                   Zeitraum auswählen
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <div className="grid grid-cols-2 gap-2 mb-3 sm:grid-cols-3 sm:gap-3 sm:mb-4">
                   {timeSpanOptions.slice(0, -1).map((option) => (
                     <button
                       key={option.value}
@@ -209,7 +209,7 @@ export default function DownloadButton({
                 </div>
 
                 {/* Custom Date Range */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
                   <button
                     onClick={() => setSelectedTimeSpan("custom")}
                     className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium border transition-colors ${
@@ -221,7 +221,7 @@ export default function DownloadButton({
                     Benutzerdefiniert
                   </button>
                   {selectedTimeSpan === "custom" && (
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-xs sm:text-sm text-primary-600 dark:text-primary-300 w-full">
+                    <div className="flex flex-col items-start w-full gap-2 text-xs sm:flex-row sm:items-center sm:text-sm text-primary-600 dark:text-primary-300">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span>Von:</span>
@@ -235,7 +235,7 @@ export default function DownloadButton({
                             start: e.target.value,
                           }))
                         }
-                        className="px-2 sm:px-3 py-1 sm:py-2 rounded-lg border border-primary-50/30 dark:border-primary-200/50 bg-background-light/70 dark:bg-primary-600/60 text-text-primary dark:text-text-light text-xs sm:text-sm"
+                        className="px-2 py-1 text-xs border rounded-lg sm:px-3 sm:py-2 border-primary-50/30 dark:border-primary-200/50 bg-background-light/70 dark:bg-primary-600/60 text-text-primary dark:text-text-light sm:text-sm"
                       />
                       <span>bis</span>
                       <input
@@ -247,7 +247,7 @@ export default function DownloadButton({
                             end: e.target.value,
                           }))
                         }
-                        className="px-2 sm:px-3 py-1 sm:py-2 rounded-lg border border-primary-50/30 dark:border-primary-200/50 bg-background-light/70 dark:bg-primary-600/60 text-text-primary dark:text-text-light text-xs sm:text-sm"
+                        className="px-2 py-1 text-xs border rounded-lg sm:px-3 sm:py-2 border-primary-50/30 dark:border-primary-200/50 bg-background-light/70 dark:bg-primary-600/60 text-text-primary dark:text-text-light sm:text-sm"
                       />
                     </div>
                   )}
@@ -255,11 +255,11 @@ export default function DownloadButton({
               </div>
 
               {/* Summary */}
-              <div className="bg-primary-50/50 dark:bg-primary-500/20 rounded-lg sm:rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
-                <h4 className="text-sm sm:text-base font-semibold text-text-primary dark:text-text-light mb-2">
+              <div className="p-3 mb-4 rounded-lg bg-primary-50/50 dark:bg-primary-500/20 sm:rounded-xl sm:p-4 sm:mb-6">
+                <h4 className="mb-2 text-sm font-semibold sm:text-base text-text-primary dark:text-text-light">
                   Export-Zusammenfassung
                 </h4>
-                <div className="text-xs sm:text-sm text-primary-600 dark:text-primary-300 space-y-1">
+                <div className="space-y-1 text-xs sm:text-sm text-primary-600 dark:text-primary-300">
                   <div>
                     <strong>Daten:</strong> {getSelectedDataTypesLabel()}
                   </div>
@@ -283,10 +283,10 @@ export default function DownloadButton({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 px-4 sm:px-6 py-2 sm:py-3 font-medium text-primary-600 dark:text-primary-300 border border-primary-200/50 dark:border-primary-300/50 rounded-lg sm:rounded-xl hover:bg-primary-50/50 dark:hover:bg-primary-500/20 transition-colors text-sm sm:text-base"
+                  className="flex-1 px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:px-6 sm:py-3 text-primary-600 dark:text-primary-300 border-primary-200/50 dark:border-primary-300/50 sm:rounded-xl hover:bg-primary-50/50 dark:hover:bg-primary-500/20 sm:text-base"
                 >
                   Abbrechen
                 </button>
@@ -297,7 +297,7 @@ export default function DownloadButton({
                     (selectedTimeSpan === "custom" &&
                       (!customDateRange.start || !customDateRange.end))
                   }
-                  className="flex-1 px-4 sm:px-6 py-2 sm:py-3 font-semibold text-white bg-gradient-to-r from-primary-400 to-accent-medium rounded-lg sm:rounded-xl hover:from-primary-500 hover:to-accent-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base"
+                  className="flex-1 px-4 py-2 text-sm font-semibold text-white transition-all rounded-lg sm:px-6 sm:py-3 bg-gradient-to-r from-primary-400 to-accent-medium sm:rounded-xl hover:from-primary-500 hover:to-accent-dark disabled:opacity-50 disabled:cursor-not-allowed sm:text-base"
                 >
                   Download starten
                 </button>

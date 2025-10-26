@@ -39,25 +39,24 @@ export default function RootLayout({
 
           <ThemeToggle />
           {/* <main className="flex flex-col items-center w-full min-h-screen p-4 bg-gradient-to-b from-[#2c1e68] via-[#1a4c9c] to-[#2aa4d8] sm:p-6 md:p-10">*/}
-          <main className="flex flex-col items-center w-full min-h-screen p-4 bg-gradient-to-br from-background-light via-accent-light to-primary-50 dark:from-background-dark dark:via-primary-600 dark:to-primary-700 sm:p-6 md:p-10">
+          <main className="flex flex-col items-center w-full min-h-screen p-1 bg-gradient-to-br from-background-light via-accent-light to-primary-50 dark:from-background-dark dark:via-primary-600 dark:to-primary-700 sm:p-6 md:p-10">
             {/* Header mit Datum und Logo */}
             <div className="relative w-full mb-[-60px]">
               {/* Logo - centered above content on mobile, absolute on desktop */}
               <div className="flex justify-center sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:top-0">
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center justify-center h-16 gap-4 sm:h-24">
                   <Logo
-                    width={300}
-                    height={300}
-                    className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px]"
+                    width={500}
+                    height={200}
+                    className="flex items-center h-full"
                   />
                   <div
-                    className="w-px bg-gray-400 dark:bg-gray-600 self-center mt-[-180px]"
-                    style={{ height: "100px" }}
+                    className="w-[2px] bg-gray-400 dark:bg-gray-600 h-8 sm:h-12"
                   ></div>
                   <Logo
-                    width={300}
-                    height={300}
-                    className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px]"
+                    width={500}
+                    height={200}
+                    className="flex items-center h-full"
                   />
                 </div>
               </div>
