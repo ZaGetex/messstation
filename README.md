@@ -137,15 +137,7 @@ Receives sensor data from the offsite sensor hub and stores it in the database.
 **Example cURL:**
 
 ```bash
-curl -X POST http://localhost:3000/api/sensor-data \
-  -H "Content-Type: application/json" \
-  -d '{
-    "cluster": "weather",
-    "sensor": "temperature",
-    "value": 22.4,
-    "unit": "°C",
-    "ts": "2025-10-10T12:00:00Z"
-  }'
+curl -X POST http://localhost:3000/api/sensor-data -H "Content-Type: application/json" -d "{\"cluster\": \"weather\", \"sensor\": \"temperature\", \"value\": 22.4, \"unit\": \"°C\", \"ts\": \"2025-10-10T12:00:00Z\"}"
 ```
 
 ### GET `/api/sensor-data`
