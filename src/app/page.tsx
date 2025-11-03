@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, MapPin, Thermometer, Droplets, Gauge } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -30,7 +30,7 @@ const LocationMap = dynamic(() => import("../components/LocationMap"), {
 });
 
 export default function Home() {
-  const [data] = useState({
+  const [data, setData] = useState({
     location: "Berlin, DE",
     temperature: "21.4 °C",
     humidity: "55 %",
@@ -42,6 +42,58 @@ export default function Home() {
       pressure: new Date(Date.now() - 3 * 60 * 1000), // 3 minutes ago
     },
   });
+
+  // Fetch latest sensor data from the API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/latest");
+        if (!response.ok) throw new Error("Failed to fetch data");
+        const latest = await response.json();
+
+        setData((prev) => ({
+          location: latest.location ? latest.location.value : prev.location,
+          temperature: latest.temperature
+            ? `${latest.temperature.value.toFixed(1)} ${
+                latest.temperature.unit || ""
+              }`
+            : prev.temperature,
+          humidity: latest.humidity
+            ? `${latest.humidity.value.toFixed(0)} ${
+                latest.humidity.unit || ""
+              }`
+            : prev.humidity,
+          pressure: latest.pressure
+            ? `${latest.pressure.value.toFixed(0)} ${
+                latest.pressure.unit || ""
+              }`
+            : prev.pressure,
+          lastUpdated: {
+            location: latest.location
+              ? new Date(latest.location.ts)
+              : prev.lastUpdated.location,
+            temperature: latest.temperature
+              ? new Date(latest.temperature.ts)
+              : prev.lastUpdated.temperature,
+            humidity: latest.humidity
+              ? new Date(latest.humidity.ts)
+              : prev.lastUpdated.humidity,
+            pressure: latest.pressure
+              ? new Date(latest.pressure.ts)
+              : prev.lastUpdated.pressure,
+          },
+        }));
+      } catch (error) {
+        console.error("Error fetching sensor data:", error);
+        // Keep previous data on error
+      }
+    };
+
+    fetchData();
+    // Refresh data every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const cardData = [
     {

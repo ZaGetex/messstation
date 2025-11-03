@@ -1,0 +1,23 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SensorData {
+  id      Int      @id @default(autoincrement())
+  cluster String   @db.VarChar(50)
+  sensor  String   @db.VarChar(50)
+  value   Float
+  unit    String?  @db.VarChar(10)
+  ts      DateTime @default(now())
+
+  @@map("sensor_data")
+}
+
