@@ -31,15 +31,15 @@ const LocationMap = dynamic(() => import("../components/LocationMap"), {
 
 export default function Home() {
   const [data, setData] = useState({
-    location: "Berlin, DE",
-    temperature: "21.4 °C",
-    humidity: "55 %",
-    pressure: "1013 hPa",
+    location: "N/A",
+    temperature: "N/A",
+    humidity: "N/A",
+    pressure: "N/A",
     lastUpdated: {
-      location: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-      temperature: new Date(Date.now() - 30 * 1000), // 30 seconds ago
-      humidity: new Date(Date.now() - 1 * 60 * 1000), // 1 minute ago
-      pressure: new Date(Date.now() - 3 * 60 * 1000), // 3 minutes ago
+      location: new Date(Date.now()), 
+      temperature: new Date(Date.now()), 
+      humidity: new Date(Date.now() ),
+      pressure: new Date(Date.now()), 
     },
   });
 
@@ -52,7 +52,7 @@ export default function Home() {
         const latest = await response.json();
 
         setData((prev) => ({
-          location: latest.location ? latest.location.value : prev.location,
+          location: latest.location ? latest.location.unit : prev.location,
           temperature: latest.temperature
             ? `${latest.temperature.value.toFixed(1)} ${
                 latest.temperature.unit || ""
