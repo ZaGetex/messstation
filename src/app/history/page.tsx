@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Chart as ChartJS,
   LineElement,
@@ -10,15 +10,16 @@ import {
   Tooltip,
   Legend,
   Filler,
-  CategoryScale,
 } from "chart.js";
+import type { ChartData, ChartOptions } from "chart.js";
+import "chartjs-adapter-date-fns";
+import { de } from "date-fns/locale";
 import { Line } from "react-chartjs-2";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import DateTime from "../../components/DateTime";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import DownloadButton from "../../components/DownloadButton";
 import { useTheme } from "../../contexts/ThemeContext";
-// @ts-ignore - chartjs-plugin-trendline doesn't have TypeScript definitions
+// @ts-ignore
 import trendline from "chartjs-plugin-trendline";
 
 ChartJS.register(
@@ -29,226 +30,215 @@ ChartJS.register(
   Tooltip,
   Legend,
   Filler,
-  CategoryScale,
   trendline
 );
 
 type RangeKey = "1h" | "5h" | "1d" | "1w";
 
-const ranges: {
-  key: RangeKey;
-  label: string;
-  points: number;
-  minutesStep: number;
-}[] = [
-  { key: "1h", label: "Letzte Stunde", points: 60, minutesStep: 1 },
-  { key: "5h", label: "Letzte 5h", points: 60, minutesStep: 5 },
-  { key: "1d", label: "Letzter Tag", points: 96, minutesStep: 15 },
-  { key: "1w", label: "Letzte Woche", points: 84, minutesStep: 120 },
+const ranges: { key: RangeKey; label: string }[] = [
+  { key: "1h", label: "Letzte Stunde" },
+  { key: "5h", label: "Letzte 5h" },
+  { key: "1d", label: "Letzter Tag" },
+  { key: "1w", label: "Letzte Woche" },
 ];
 
-function generateFakeSeries(points: number, base: number, amplitude: number) {
-  const data: number[] = [];
-  for (let i = 0; i < points; i++) {
-    const noise = (Math.random() - 0.5) * amplitude * 0.2;
-    const wave = Math.sin((i / points) * Math.PI * 4) * amplitude;
-    data.push(base + wave + noise);
+type SensorDataRecord = {
+  ts: string;
+  sensor: string;
+  value: number;
+  unit: string | null;
+};
+
+// Default colors for auto-generated sensors
+const COLORS = [
+  "#e74c3c", // red
+  "#3498db", // blue
+  "#27ae60", // green
+  "#f1c40f", // yellow
+  "#9b59b6", // purple
+  "#1abc9c", // teal
+  "#e67e22", // orange
+];
+
+/** Processes API data dynamically into Chart.js format */
+function processDataForChart(apiData: SensorDataRecord[]): ChartData<"line"> {
+  const grouped: Record<string, { x: Date; y: number; unit: string | null }[]> =
+    {};
+
+  for (const { sensor, ts, value, unit } of apiData) {
+    if (!grouped[sensor]) grouped[sensor] = [];
+    grouped[sensor].push({ x: new Date(ts), y: value, unit });
   }
-  return data;
-}
 
-function useFakeData(range: RangeKey) {
-  const meta = ranges.find((r) => r.key === range)!;
-  const now = new Date();
-  const labels: string[] = [];
-  for (let i = meta.points - 1; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * meta.minutesStep * 60_000);
-    labels.push(
-      `${d.getHours().toString().padStart(2, "0")}:${d
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}`
-    );
+  const datasets: any[] = [];
+  let colorIndex = 0;
+
+  for (const [sensor, data] of Object.entries(grouped)) {
+    const color = COLORS[colorIndex % COLORS.length];
+    const unit = data[0]?.unit ?? "";
+
+    // Main line
+    datasets.push({
+      label: `${sensor} (${unit})`,
+      data,
+      borderColor: color,
+      backgroundColor: `${color}33`,
+      borderWidth: 2,
+      tension: 0.3,
+      pointRadius: 3,
+      pointHoverRadius: 6,
+      pointBackgroundColor: color,
+      fill: false,
+      yAxisID: "y",
+      order: 1,
+    });
+
+    // Optional trendline
+    datasets.push({
+      label: `${sensor} Trend`,
+      data,
+      borderColor: color,
+      borderDash: [6, 4],
+      borderWidth: 1.5,
+      pointRadius: 0,
+      showLine: true,
+      yAxisID: "y",
+      order: 2,
+      // @ts-ignore
+      trendlineLinear: {
+        colorMin: color,
+        colorMax: color,
+        lineStyle: "dashed",
+        width: 1.5,
+      },
+    });
+
+    colorIndex++;
   }
 
-  const temperature = generateFakeSeries(meta.points, 21.5, 3.5);
-  const humidity = generateFakeSeries(meta.points, 55, 10);
-  const pressure = generateFakeSeries(meta.points, 1013, 4);
-
-  return { labels, temperature, humidity, pressure };
+  return { datasets };
 }
 
 export default function HistoryPage() {
   const [range, setRange] = useState<RangeKey>("1h");
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [chartData, setChartData] = useState<ChartData<"line">>({
+    datasets: [],
+  });
   const { theme } = useTheme();
-  const { labels, temperature, humidity, pressure } = useFakeData(range);
 
+  // Detect mobile
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const data = useMemo(
-    () => ({
-      labels,
-      datasets: [
-        {
-          label: "Temperatur (°C)",
-          data: temperature,
-          borderColor: "#e74c3c",
-          backgroundColor: "rgba(231, 76, 60, 0.15)",
-          tension: 0.3,
-          fill: true,
-          pointRadius: 0,
-        },
-        {
-          label: "Temperatur Trend",
-          data: temperature,
-          borderColor: "#e74c3c",
-          borderDash: [5, 5],
-          borderWidth: 2,
-          pointRadius: 0,
-          showLine: true,
-          trendlineLinear: {
-            colorMin: "#e74c3c",
-            colorMax: "#e74c3c",
-            lineStyle: "dashed",
-            width: 2,
-          },
-        },
-        {
-          label: "Luftfeuchtigkeit (%)",
-          data: humidity,
-          borderColor: "#3498db",
-          backgroundColor: "rgba(52, 152, 219, 0.15)",
-          tension: 0.3,
-          fill: true,
-          pointRadius: 0,
-        },
-        {
-          label: "Luftfeuchtigkeit Trend",
-          data: humidity,
-          borderColor: "#3498db",
-          borderDash: [5, 5],
-          borderWidth: 2,
-          pointRadius: 0,
-          showLine: true,
-          trendlineLinear: {
-            colorMin: "#3498db",
-            colorMax: "#3498db",
-            lineStyle: "dashed",
-            width: 2,
-          },
-        },
-        {
-          label: "Luftdruck (hPa)",
-          data: pressure,
-          borderColor: "#27ae60",
-          backgroundColor: "rgba(39, 174, 96, 0.15)",
-          tension: 0.25,
-          fill: true,
-          pointRadius: 0,
-          yAxisID: "y2",
-        },
-        {
-          label: "Luftdruck Trend",
-          data: pressure,
-          borderColor: "#27ae60",
-          borderDash: [5, 5],
-          borderWidth: 2,
-          pointRadius: 0,
-          showLine: true,
-          yAxisID: "y2",
-          trendlineLinear: {
-            colorMin: "#27ae60",
-            colorMax: "#27ae60",
-            lineStyle: "dashed",
-            width: 2,
-          },
-        },
-      ],
-    }),
-    [labels, temperature, humidity, pressure]
-  );
+  // Fetch data
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/history-chart?range=${range}`);
+        if (!response.ok) throw new Error("Failed to fetch data");
+        const json = await response.json();
+        setChartData(processDataForChart(json.data));
+      } catch (err) {
+        console.error("Error fetching chart data:", err);
+        setChartData({ datasets: [] });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, [range]);
 
-  const options = useMemo(
-    () => ({
+  const chartOptions = useMemo((): ChartOptions<"line"> => {
+    const gridColor =
+      theme === "dark"
+        ? "rgba(120, 120, 120, 0.3)"
+        : "rgba(180, 180, 180, 0.2)";
+    const tickColor = theme === "dark" ? "#e5e7eb" : "#111827";
+    const tickSize = isMobile ? 8 : 11;
+
+    return {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: "index" as const, intersect: false },
+      interaction: { mode: "index", intersect: false },
+      animation: false,
       plugins: {
         legend: {
-          position: "bottom" as const,
+          position: "bottom",
           labels: {
-            color: theme === "dark" ? "#e5e7eb" : "#011541",
-            font: {
-              size: isMobile ? 8 : 12,
-            },
-            padding: isMobile ? 6 : 12,
-            boxWidth: isMobile ? 8 : 16,
+            color: tickColor,
+            font: { size: isMobile ? 9 : 12 },
+            padding: 10,
+            filter: (item) => !item.text.includes("Trend"),
           },
         },
         tooltip: {
           enabled: true,
-          titleFont: {
-            size: isMobile ? 10 : 13,
+          intersect: false,
+          mode: "index",
+          backgroundColor:
+            theme === "dark" ? "rgba(30,30,30,0.9)" : "rgba(255,255,255,0.9)",
+          titleColor: tickColor,
+          bodyColor: tickColor,
+          borderColor: gridColor,
+          borderWidth: 1,
+          callbacks: {
+            label: (ctx) => {
+              // ctx.raw can be a number or an object like {x, y, unit}
+              const raw = ctx.raw as unknown;
+              let unit = "";
+              if (typeof raw === "object" && raw !== null && "unit" in raw) {
+                unit = (raw as any).unit ?? "";
+              }
+
+              // Remove the "(unit)" suffix from dataset label so tooltip shows clean sensor name
+              const labelBase = ctx.dataset.label
+                ? ctx.dataset.label.replace(/\s*\(.+\)$/, "")
+                : "value";
+
+              // Ensure parsed.y exists (should for line charts)
+              const value =
+                typeof ctx.parsed === "object"
+                  ? (ctx.parsed as any).y
+                  : ctx.parsed;
+
+              return `${labelBase}: ${value}${unit}`;
+            },
           },
-          bodyFont: {
-            size: isMobile ? 9 : 12,
-          },
+          titleFont: { size: isMobile ? 10 : 13 },
+          bodyFont: { size: isMobile ? 9 : 12 },
+          filter: (item) => !item.dataset.label?.includes("Trend"),
         },
       },
       scales: {
         x: {
-          ticks: {
-            color: theme === "dark" ? "#d1d5db" : "#042061",
-            font: {
-              size: isMobile ? 8 : 11,
+          type: "time",
+          adapters: { date: { locale: de } },
+          time: {
+            tooltipFormat: "dd.MM.yyyy HH:mm",
+            displayFormats: {
+              minute: "HH:mm",
+              hour: "HH:mm",
+              day: "dd.MM.",
+              week: "dd.MM.",
             },
           },
-          grid: {
-            color:
-              theme === "dark"
-                ? "rgba(75, 85, 99, 0.3)"
-                : "rgba(165, 186, 215, 0.2)",
-          },
+          ticks: { color: tickColor, font: { size: tickSize } },
+          grid: { color: gridColor },
         },
         y: {
-          position: "left" as const,
-          ticks: {
-            color: theme === "dark" ? "#d1d5db" : "#042061",
-            font: {
-              size: isMobile ? 8 : 11,
-            },
-          },
-          grid: {
-            color:
-              theme === "dark"
-                ? "rgba(75, 85, 99, 0.3)"
-                : "rgba(165, 186, 215, 0.2)",
-          },
-        },
-        y2: {
-          position: "right" as const,
-          ticks: {
-            color: theme === "dark" ? "#d1d5db" : "#042061",
-            font: {
-              size: isMobile ? 8 : 11,
-            },
-          },
-          grid: { drawOnChartArea: false },
+          ticks: { color: tickColor, font: { size: tickSize } },
+          grid: { color: gridColor },
         },
       },
-    }),
-    [isMobile, theme]
-  );
+    };
+  }, [isMobile, theme]);
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-1 bg-gradient-to-br from-background-light via-accent-light to-primary-50 dark:from-background-dark dark:via-primary-600 dark:to-primary-700 sm:p-6 md:p-10">
@@ -290,7 +280,14 @@ export default function HistoryPage() {
           className="p-1 border shadow-lg sm:p-4 bg-background-light/60 dark:bg-primary-600/60 backdrop-blur-md border-primary-50/30 dark:border-primary-200/50 rounded-2xl sm:rounded-3xl sm:p-6"
           style={{ height: isMobile ? 400 : 420 }}
         >
-          <Line data={data} options={options} />
+          {isLoading ? (
+            <div className="flex items-center justify-center w-full h-full text-text-primary dark:text-text-light">
+              <Loader2 className="w-8 h-8 animate-spin" />
+              <span className="ml-3 text-lg">Lade Daten...</span>
+            </div>
+          ) : (
+            <Line data={chartData} options={chartOptions} />
+          )}
         </div>
       </section>
     </main>
