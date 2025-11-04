@@ -1,11 +1,52 @@
-How to Add a New Sensor (e.g., "Wind Speed")This guide explains how to add a new sensor to the Messstation dashboard.Your application is already highly modular. The database and the data-intake API are designed to accept any sensor data without any code changes.The only parts that require updates are the specific UIs where you want to display this new data, such as the main dashboard.Here is the step-by-step process, using a new "Wind Speed" sensor as an example.Step 1: Database & Data Ingestion (No Action Needed)This step is already complete.Your database schema (prisma/schema.prisma) uses a generic SensorData model with a sensor field (which is a string). This means it can store any sensor name you send it.Likewise, the /api/sensor-data POST route is also generic. It takes the JSON body and saves it directly.All you have to do is configure your sensor hub (the device sending the data) to start sending new POST requests for "wind_speed".Example JSON to send to /api/sensor-data:{
+"""# How to Add a New Sensor (e.g., "Wind Speed")
+
+This guide explains how to add a new sensor to the Messstation dashboard.
+
+Your application is already highly modular. The database and the data-intake API are designed to accept *any* sensor data without any code changes.
+
+The only parts that require updates are the specific UIs where you want to *display* this new data, such as the main dashboard.
+
+Here is the step-by-step process, using a new "Wind Speed" sensor as an example.
+
+---
+
+## Step 1: Database & Data Ingestion (No Action Needed)
+
+**This step is already complete.**
+
+Your database schema (`prisma/schema.prisma`) uses a generic `SensorData` model with a `sensor` field (which is a string). This means it can store *any* sensor name you send it.
+
+Likewise, the `/api/sensor-data` `POST` route is also generic. It takes the JSON body and saves it directly.
+
+**All you have to do is configure your sensor hub (the device sending the data) to start sending new `POST` requests for `"wind_speed"`.**
+
+**Example JSON to send to `/api/sensor-data`:**
+
+```json
+{
   "cluster": "weather",
   "sensor": "wind_speed",
   "value": 25.5,
   "unit": "km/h",
   "ts": "2025-11-05T10:30:00Z"
 }
-The database will accept and store this data immediately.Step 2: Update the "Latest Data" APITo show the new sensor on the main dashboard, you must first update the /api/latest/route.ts endpoint so it fetches the latest value for "wind_speed".File: src/app/api/latest/route.ts1. Add the new query:Add a new prisma.sensorData.findFirst query inside the Promise.all array for your new sensor.// ...
+```
+
+The database will accept and store this data immediately.
+
+---
+
+## Step 2: Update the "Latest Data" API
+
+To show the new sensor on the main dashboard, you must first update the `/api/latest/route.ts` endpoint so it fetches the latest value for "wind_speed".
+
+**File:** `src/app/api/latest/route.ts`
+
+**1. Add the new query:**
+Add a new `prisma.sensorData.findFirst` query inside the `Promise.all` array for your new sensor.
+
+```typescript
+// ...
 export async function GET() {
   try {
     // Fetch the latest reading for each sensor type
@@ -39,8 +80,28 @@ export async function GET() {
     })
   } catch (error) {
 // ...
-Step 3: Update the Dashboard UINow that the API is sending wind_speed, you can display it on the homepage.File: src/app/page.tsx1. Import a new icon:Find a suitable icon from lucide-react (like Wind) and import it at the top.import { Download, MapPin, Thermometer, Droplets, Gauge, Wind } from "lucide-react";
-2. Add state for the new sensor:Add wind_speed and lastUpdated.wind_speed to the useState hook.// ...
+```
+
+---
+
+## Step 3: Update the Dashboard UI
+
+Now that the API is sending `wind_speed`, you can display it on the homepage.
+
+**File:** `src/app/page.tsx`
+
+**1. Import a new icon:**
+Find a suitable icon from `lucide-react` (like `Wind`) and import it at the top.
+
+```typescript
+import { Download, MapPin, Thermometer, Droplets, Gauge, Wind } from "lucide-react";
+```
+
+**2. Add state for the new sensor:**
+Add `wind_speed` and `lastUpdated.wind_speed` to the `useState` hook.
+
+```typescript
+// ...
 export default function Home() {
   const [data, setData] = useState({
     location: "N/A",
@@ -85,7 +146,13 @@ export default function Home() {
         }));
       } catch (error) {
 // ...
-3. Add the new card:Add a new card object to the cardData array. You can place it anywhere in the list.// ...
+```
+
+**3. Add the new card:**
+Add a new card object to the `cardData` array. You can place it anywhere in the list.
+
+```typescript
+// ...
   const cardData = [
     {
       title: "Location",
@@ -113,7 +180,18 @@ export default function Home() {
 
   return (
 // ...
-Step 4: Update the CSV Export Modal (Optional)To make the new sensor selectable in the download modal, add it to the dataTypeOptions.File: src/components/DownloadButton.tsx// ...
+```
+
+---
+
+## Step 4: Update the CSV Export Modal (Optional)
+
+To make the new sensor selectable in the download modal, add it to the `dataTypeOptions`.
+
+**File:** `src/components/DownloadButton.tsx`
+
+```typescript
+// ...
 const dataTypeOptions: {
 // ...
   { value: "pressure", label: "Luftdruck", description: "Druckdaten in hPa" },
@@ -130,10 +208,39 @@ const dataTypeOptions: {
   {
     value: "all",
 // ...
-The backend (/api/export-csv) is already modular and will automatically handle "wind_speed" if it's in the dataTypes array, so no backend changes are needed for the export.Suggestions for Future ModularityYour current setup is a great balance of simplicity and function. The main dashboard is static (it always shows Temperature, Humidity, etc.), which is often what you want.If you plan to add many more sensors and want the dashboard to update automatically without editing files, you could implement a more advanced, dynamic system:Advanced Suggestion: A Config-Driven DashboardCreate a "Dashboard Config": This could be a simple JSON file in your project or, even better, a new table in your database (e.g., DashboardConfig). This config would list which sensors to display, their titles, and which icon to use.Example dashboard-config.json:[
-  { "sensor": "temperature", "title": "Temperatur", "icon": "Thermometer" },
-  { "sensor": "humidity", "title": "Luftfeuchtigkeit", "icon": "Droplets" },
-  { "sensor": "pressure", "title": "Luftdruck", "icon": "Gauge" },
-  { "sensor": "wind_speed", "title": "Windstärke", "icon": "Wind" }
-]
-Make the API Dynamic: Modify /api/latest/route.ts to read this config file first. It would then dynamically build the Promise.all array by looping over the sensors listed in the config.Make the Frontend Dynamic: Modify /app/page.tsx to:Fetch this config file.Fetch the latest data (which is now also dynamic).Instead of a hardcoded cardData array, it would .map() over your config file to render the cards dynamically.Conclusion:The current "hardcoded" frontend is perfectly fine and easy to manage. But if you find yourself adding/removing sensors frequently, switching to a "config-driven" approach would make the dashboard completely modular, just like your backend.
+```
+
+The backend (`/api/export-csv`) is already modular and will automatically handle `"wind_speed"` if it's in the `dataTypes` array, so no backend changes are needed for the export.
+
+---
+
+## Suggestions for Future Modularity
+
+Your current setup is a great balance of simplicity and function. The main dashboard is static (it *always* shows Temperature, Humidity, etc.), which is often what you want.
+
+If you plan to add many more sensors and want the dashboard to update *automatically* without editing files, you could implement a more advanced, dynamic system:
+
+**Advanced Suggestion: A Config-Driven Dashboard**
+
+1.  **Create a "Dashboard Config":** This could be a simple JSON file in your project or, even better, a new table in your database (e.g., `DashboardConfig`). This config would list which sensors to display, their titles, and which icon to use.
+
+    **Example `dashboard-config.json`:**
+    ```json
+    [
+      { "sensor": "temperature", "title": "Temperatur", "icon": "Thermometer" },
+      { "sensor": "humidity", "title": "Luftfeuchtigkeit", "icon": "Droplets" },
+      { "sensor": "pressure", "title": "Luftdruck", "icon": "Gauge" },
+      { "sensor": "wind_speed", "title": "Windstärke", "icon": "Wind" }
+    ]
+    ```
+
+2.  **Make the API Dynamic:** Modify `/api/latest/route.ts` to *read this config file first*. It would then dynamically build the `Promise.all` array by looping over the sensors listed in the config.
+
+3.  **Make the Frontend Dynamic:** Modify `/app/page.tsx` to:
+    * Fetch this config file.
+    * Fetch the latest data (which is now also dynamic).
+    * Instead of a hardcoded `cardData` array, it would `.map()` over your config file to render the cards dynamically.
+
+**Conclusion:**
+The current "hardcoded" frontend is perfectly fine and easy to manage. But if you find yourself adding/removing sensors frequently, switching to a "config-driven" approach would make the dashboard completely modular, just like your backend.
+"""
