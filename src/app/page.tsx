@@ -36,10 +36,10 @@ export default function Home() {
     humidity: "N/A",
     pressure: "N/A",
     lastUpdated: {
-      location: new Date(Date.now()), 
-      temperature: new Date(Date.now()), 
-      humidity: new Date(Date.now() ),
-      pressure: new Date(Date.now()), 
+      location: new Date(Date.now()),
+      temperature: new Date(Date.now()),
+      humidity: new Date(Date.now()),
+      pressure: new Date(Date.now()),
     },
   });
 
@@ -52,7 +52,7 @@ export default function Home() {
         const latest = await response.json();
 
         setData((prev) => ({
-          location: latest.location ? latest.location.unit : prev.location,
+          location: latest.location ? latest.location.value : prev.location,
           temperature: latest.temperature
             ? `${latest.temperature.value.toFixed(1)} ${
                 latest.temperature.unit || ""

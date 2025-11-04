@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Download, Calendar, FileText, Clock, X } from "lucide-react";
+import {
+  Download,
+  Calendar,
+  FileText,
+  Clock,
+  X,
+  Loader2, // Added a loader icon
+} from "lucide-react";
 
 interface DownloadButtonProps {
   className?: string;
@@ -52,6 +59,7 @@ export default function DownloadButton({
   className = "",
 }: DownloadButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // For loading state
   const [selectedDataTypes, setSelectedDataTypes] = useState<DataType[]>([
     "all",
   ]);
@@ -91,23 +99,50 @@ export default function DownloadButton({
     }
   };
 
-  const handleDownload = () => {
-    // TODO: Implement actual download logic
-    console.log("Downloading CSV with:", {
-      dataTypes: selectedDataTypes,
-      timeSpan: selectedTimeSpan,
-      customRange: customDateRange,
-    });
+  const handleDownload = async () => {
+    setIsSubmitting(true);
+    try {
+      // 1. Build query parameters
+      const params = new URLSearchParams();
+      params.set("dataTypes", selectedDataTypes.join(","));
+      params.set("timeSpan", selectedTimeSpan);
 
-    // For now, just show an alert
-    alert(
-      `Download wird vorbereitet...\nDaten: ${selectedDataTypes.join(
-        ", "
-      )}\nZeitraum: ${
-        timeSpanOptions.find((opt) => opt.value === selectedTimeSpan)?.label
-      }`
-    );
-    setIsOpen(false);
+      if (selectedTimeSpan === "custom") {
+        if (customDateRange.start) {
+          params.set(
+            "startDate",
+            new Date(customDateRange.start).toISOString()
+          );
+        }
+        if (customDateRange.end) {
+          params.set("endDate", new Date(customDateRange.end).toISOString());
+        }
+      }
+
+      // 2. Create the full URL
+      const url = `/api/export-csv?${params.toString()}`;
+
+      // 3. Trigger the download
+      // This will open the URL, and because the server sends
+      // 'Content-Disposition: attachment', the browser will
+      // automatically start a file download.
+      window.open(url, "_blank");
+
+      // Close the modal after a short delay
+      setTimeout(() => {
+        setIsOpen(false);
+      }, 500);
+    } catch (error) {
+      console.error("Failed to start download:", error);
+      // Here you could show an error message to the user
+      // Note: alert() is avoided in your project setup, but as a fallback:
+      // alert("Fehler beim Starten des Downloads.");
+    } finally {
+      // Reset loading state
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 1000); // Give browser time to start download
+    }
   };
 
   const getSelectedDataTypesLabel = () => {
@@ -290,7 +325,8 @@ export default function DownloadButton({
                     customDateRange.end && (
                       <div>
                         <strong>Benutzerdefiniert:</strong>{" "}
-                        {customDateRange.start} bis {customDateRange.end}
+                        {new Date(customDateRange.start).toLocaleString()} bis{" "}
+                        {new Date(customDateRange.end).toLocaleString()}
                       </div>
                     )}
                 </div>
@@ -300,20 +336,29 @@ export default function DownloadButton({
               <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 px-3 py-2 text-xs font-medium transition-colors border rounded-lg sm:px-4 sm:py-2 text-primary-600 dark:text-primary-300 border-primary-200/50 dark:border-primary-300/50 hover:bg-primary-50/50 dark:hover:bg-primary-500/20 sm:text-sm"
+                  disabled={isSubmitting}
+                  className="flex-1 px-3 py-2 text-xs font-medium transition-colors border rounded-lg sm:px-4 sm:py-2 text-primary-600 dark:text-primary-300 border-primary-200/50 dark:border-primary-300/50 hover:bg-primary-50/50 dark:hover:bg-primary-500/20 sm:text-sm disabled:opacity-50"
                 >
                   Abbrechen
                 </button>
                 <button
                   onClick={handleDownload}
                   disabled={
+                    isSubmitting ||
                     selectedDataTypes.length === 0 ||
                     (selectedTimeSpan === "custom" &&
                       (!customDateRange.start || !customDateRange.end))
                   }
-                  className="flex-1 px-3 py-2 text-xs font-semibold text-white transition-all rounded-lg sm:px-4 sm:py-2 bg-gradient-to-r from-primary-400 to-accent-medium hover:from-primary-500 hover:to-accent-dark disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm"
+                  className="flex-1 px-3 py-2 text-xs font-semibold text-white transition-all rounded-lg sm:px-4 sm:py-2 bg-gradient-to-r from-primary-400 to-accent-medium hover:from-primary-500 hover:to-accent-dark disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm flex items-center justify-center gap-2"
                 >
-                  Download starten
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Wird vorbereitet...
+                    </>
+                  ) : (
+                    "Download starten"
+                  )}
                 </button>
               </div>
             </div>
