@@ -1,4 +1,4 @@
-"""# How to Add a New Sensor (e.g., "Wind Speed")
+## How to Add a New Sensor (e.g., "Wind Speed")
 
 This guide explains how to add a new sensor to the Messstation dashboard.
 
@@ -212,35 +212,3 @@ const dataTypeOptions: {
 
 The backend (`/api/export-csv`) is already modular and will automatically handle `"wind_speed"` if it's in the `dataTypes` array, so no backend changes are needed for the export.
 
----
-
-## Suggestions for Future Modularity
-
-Your current setup is a great balance of simplicity and function. The main dashboard is static (it *always* shows Temperature, Humidity, etc.), which is often what you want.
-
-If you plan to add many more sensors and want the dashboard to update *automatically* without editing files, you could implement a more advanced, dynamic system:
-
-**Advanced Suggestion: A Config-Driven Dashboard**
-
-1.  **Create a "Dashboard Config":** This could be a simple JSON file in your project or, even better, a new table in your database (e.g., `DashboardConfig`). This config would list which sensors to display, their titles, and which icon to use.
-
-    **Example `dashboard-config.json`:**
-    ```json
-    [
-      { "sensor": "temperature", "title": "Temperatur", "icon": "Thermometer" },
-      { "sensor": "humidity", "title": "Luftfeuchtigkeit", "icon": "Droplets" },
-      { "sensor": "pressure", "title": "Luftdruck", "icon": "Gauge" },
-      { "sensor": "wind_speed", "title": "Windstärke", "icon": "Wind" }
-    ]
-    ```
-
-2.  **Make the API Dynamic:** Modify `/api/latest/route.ts` to *read this config file first*. It would then dynamically build the `Promise.all` array by looping over the sensors listed in the config.
-
-3.  **Make the Frontend Dynamic:** Modify `/app/page.tsx` to:
-    * Fetch this config file.
-    * Fetch the latest data (which is now also dynamic).
-    * Instead of a hardcoded `cardData` array, it would `.map()` over your config file to render the cards dynamically.
-
-**Conclusion:**
-The current "hardcoded" frontend is perfectly fine and easy to manage. But if you find yourself adding/removing sensors frequently, switching to a "config-driven" approach would make the dashboard completely modular, just like your backend.
-"""
