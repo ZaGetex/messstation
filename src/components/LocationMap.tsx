@@ -1,7 +1,11 @@
+// src/components/LocationMap.tsx
+
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { useMap } from "react-leaflet"; // NEW IMPORT
+import { LocateFixed } from "lucide-react"; // NEW IMPORT
 
 type LatLng = {
   lat: number;
@@ -33,6 +37,37 @@ const ZoomControl = dynamic(
   () => import("react-leaflet").then((m) => m.ZoomControl),
   { ssr: false }
 );
+
+// This component must be a child of <MapContainer> to use the useMap hook
+function HomingButton({ center, zoom }: { center: LatLng; zoom: number }) {
+  const map = useMap();
+
+  const onClick = () => {
+    map.flyTo(center, zoom); // Fly back to the original center and zoom
+  };
+
+  // These classes are styled to mimic the zoom control
+  return (
+    <button
+      onClick={onClick}
+      className="absolute z-[1000] bottom-[90px] right-[10px] 
+                 w-8 h-8
+                 flex items-center justify-center 
+                 bg-white/90 dark:bg-[rgba(1,21,65,0.9)] 
+                 backdrop-blur-lg 
+                 shadow-lg rounded-lg 
+                 hover:bg-[rgba(18,58,152,0.1)] dark:hover:bg-[rgba(165,186,215,0.1)]
+                 text-[#123a98] dark:text-[#a5bad7]
+                 hover:text-[#042061] dark:hover:text-[#f7fcfa]
+                 transition-all duration-200 ease-in-out
+                 border border-transparent"
+      aria-label="Re-center map"
+      title="Re-center map"
+    >
+      <LocateFixed className="w-5 h-5" />
+    </button>
+  );
+}
 
 // Modern custom marker creation
 const createModernMarker = async () => {
@@ -166,7 +201,7 @@ export default function LocationMap({
 
   return (
     <div
-      className="w-full overflow-hidden rounded-2xl border border-primary-50/30 dark:border-primary-200/50 shadow-lg bg-white/80 dark:bg-primary-800/80 backdrop-blur-sm"
+      className="w-full overflow-hidden rounded-2xl border border-primary-50/30 dark:border-primary-200/50 shadow-lg bg-white/80 dark:bg-primary-800/80 backdrop-blur-sm relative" // <-- ADDED 'relative'
       style={mapStyle}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -180,7 +215,7 @@ export default function LocationMap({
       >
         {/* Modern CartoDB Positron tile layer */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          attribution='&copy; <a href="https.www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           subdomains="abcd"
           maxZoom={20}
@@ -194,6 +229,8 @@ export default function LocationMap({
             </div>
           </Popup>
         </Marker>
+
+        <HomingButton center={center} zoom={zoom} />
         <ZoomControl position="bottomright" />
       </MapContainer>
     </div>
