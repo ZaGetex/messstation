@@ -2,11 +2,9 @@
 
 This guide explains how to add a new sensor to the Messstation dashboard.
 
-Your application is already highly modular. The database and the data-intake API are designed to accept *any* sensor data without any code changes.
+Your application is now highly modular. The database, data-intake API, dashboard, history page, and download modal are all driven by a **single configuration file**.
 
-The only parts that require updates are the specific UIs where you want to *display* this new data, such as the main dashboard.
-
-Here is the step-by-step process, using a new "Wind Speed" sensor as an example.
+Adding a new sensor is now a simple 2-step process.
 
 ---
 
@@ -14,11 +12,9 @@ Here is the step-by-step process, using a new "Wind Speed" sensor as an example.
 
 **This step is already complete.**
 
-Your database schema (`prisma/schema.prisma`) uses a generic `SensorData` model with a `sensor` field (which is a string). This means it can store *any* sensor name you send it.
+Your database schema (`prisma/schema.prisma`) and the `/api/sensor-data` `POST` route are generic. They are designed to accept _any_ sensor data you send them without any code changes.
 
-Likewise, the `/api/sensor-data` `POST` route is also generic. It takes the JSON body and saves it directly.
-
-**All you have to do is configure your sensor hub (the device sending the data) to start sending new `POST` requests for `"wind_speed"`.**
+**All you have to do is configure your sensor hub (the device sending the data) to start sending new `POST` requests for your new sensor.**
 
 **Example JSON to send to `/api/sensor-data`:**
 
@@ -36,179 +32,96 @@ The database will accept and store this data immediately.
 
 ---
 
-## Step 2: Update the "Latest Data" API
+## Step 2: Add the Sensor to the UI Configuration
 
-To show the new sensor on the main dashboard, you must first update the `/api/latest/route.ts` endpoint so it fetches the latest value for "wind_speed".
+This is the **only file you need to edit**. This file acts as the "single source of truth" for your entire application.
 
-**File:** `src/app/api/latest/route.ts`
+**File:** `src/lib/sensorConfig.ts`
 
-**1. Add the new query:**
-Add a new `prisma.sensorData.findFirst` query inside the `Promise.all` array for your new sensor.
+### 1\. Import a new icon
+
+At the top of the file, import the icon you want to use from `lucide-react`.
 
 ```typescript
-// ...
-export async function GET() {
-  try {
-    // Fetch the latest reading for each sensor type
-    const [temperature, humidity, pressure, location, wind_speed] = await Promise.all([
-      prisma.sensorData.findFirst({
-// ... (existing queries for temperature, humidity, pressure, location) ...
-      }),
-      prisma.sensorData.findFirst({
-        where: { sensor: 'location' },
-        orderBy: { ts: 'desc' },
-      }),
-      // ADD THIS NEW QUERY
-      prisma.sensorData.findFirst({
-        where: { sensor: 'wind_speed' },
-        orderBy: { ts: 'desc' },
-      }),
-    ])
+// src/lib/sensorConfig.ts
 
-    return NextResponse.json({
-// ... (existing properties: temperature, humidity, pressure, location) ...
-      } : null,
-      location: location ? {
-// ...
-      } : null,
-      // ADD THIS NEW PROPERTY
-      wind_speed: wind_speed ? {
-        value: wind_speed.value,
-        unit: wind_speed.unit,
-        ts: wind_speed.ts,
-      } : null,
-    })
-  } catch (error) {
-// ...
+import {
+  Thermometer,
+  Droplets,
+  Gauge,
+  MapPin,
+  Wind, // <-- ADD YOUR NEW ICON HERE
+  LucideIcon,
+} from "lucide-react";
 ```
 
----
+### 2\. Add a new configuration object
 
-## Step 3: Update the Dashboard UI
-
-Now that the API is sending `wind_speed`, you can display it on the homepage.
-
-**File:** `src/app/page.tsx`
-
-**1. Import a new icon:**
-Find a suitable icon from `lucide-react` (like `Wind`) and import it at the top.
+Add a new object for your sensor to the `sensorConfig` array. The order in this array is the order they will appear on the dashboard.
 
 ```typescript
-import { Download, MapPin, Thermometer, Droplets, Gauge, Wind } from "lucide-react";
-```
+// src/lib/sensorConfig.ts
 
-**2. Add state for the new sensor:**
-Add `wind_speed` and `lastUpdated.wind_speed` to the `useState` hook.
+// ... (SensorConfig interface)
 
-```typescript
-// ...
-export default function Home() {
-  const [data, setData] = useState({
-    location: "N/A",
-    temperature: "N/A",
-    humidity: "N/A",
-    pressure: "N/A",
-    wind_speed: "N/A", // <-- ADD THIS
-    lastUpdated: {
-      location: new Date(Date.now()), 
-      temperature: new Date(Date.now()), 
-      humidity: new Date(Date.now() ),
-      pressure: new Date(Date.now()), 
-      wind_speed: new Date(Date.now()), // <-- ADD THIS
-    },
-  });
-
-  // Fetch latest sensor data from the API
-  useEffect(() => {
-// ...
-        const latest = await response.json();
-
-        setData((prev) => ({
-// ... (existing properties: location, temperature, humidity, pressure) ...
-              }`
-            : prev.pressure,
-          // ADD THIS
-          wind_speed: latest.wind_speed
-            ? `${latest.wind_speed.value.toFixed(1)} ${
-                latest.wind_speed.unit || ""
-              }`
-            : prev.wind_speed,
-          lastUpdated: {
-// ... (existing lastUpdated properties) ...
-            pressure: latest.pressure
-              ? new Date(latest.pressure.ts)
-              : prev.lastUpdated.pressure,
-            // ADD THIS
-            wind_speed: latest.wind_speed
-              ? new Date(latest.wind_speed.ts)
-              : prev.lastUpdated.wind_speed,
-          },
-        }));
-      } catch (error) {
-// ...
-```
-
-**3. Add the new card:**
-Add a new card object to the `cardData` array. You can place it anywhere in the list.
-
-```typescript
-// ...
-  const cardData = [
-    {
-      title: "Location",
-// ...
-    },
-    // ... (temperature, humidity, pressure cards) ...
-    {
-      title: "Luftdruck",
-// ...
-      lastUpdated: data.lastUpdated.pressure,
-    },
-    // ADD THIS NEW CARD
-    {
-      title: "Windstärke",
-      value: data.wind_speed,
-      icon: Wind,
-      iconColor: "text-gray-500",
-      bgColor: "bg-gray-500/10",
-      shadowColor: "shadow-gray-500/20",
-      borderColor: "hover:border-gray-500/50",
-      hoverTextColor: "group-hover:text-gray-600",
-      lastUpdated: data.lastUpdated.wind_speed,
-    },
-  ];
-
-  return (
-// ...
-```
-
----
-
-## Step 4: Update the CSV Export Modal (Optional)
-
-To make the new sensor selectable in the download modal, add it to the `dataTypeOptions`.
-
-**File:** `src/components/DownloadButton.tsx`
-
-```typescript
-// ...
-const dataTypeOptions: {
-// ...
-  { value: "pressure", label: "Luftdruck", description: "Druckdaten in hPa" },
+// --- MASTER SENSOR CONFIGURATION ---
+// This is the only array you need to edit to add or remove sensors.
+export const sensorConfig: SensorConfig[] = [
+  // ... (existing configs for temperature, humidity, air_pressure, location)
   {
-    value: "location",
-// ...
+    sensorId: "air_pressure",
+    // ...
   },
-  // ADD THIS NEW OPTION
   {
-    value: "wind_speed",
-    label: "Windstärke",
+    sensorId: "location",
+    // ...
+  },
+
+  // --- ADD YOUR NEW SENSOR CONFIGURATION HERE ---
+  {
+    sensorId: "wind_speed",
+    title: "Windstärke",
+    unit: "km/h",
+    icon: Wind,
+    formatting: (value) => value.toFixed(1),
+    iconColor: "text-gray-500",
+    bgColor: "bg-gray-500/10",
+    shadowColor: "shadow-gray-500/20",
+    borderColor: "hover:border-gray-500/50",
+    hoverTextColor: "group-hover:text-gray-600",
+    showInHistory: true,
+    showInDownload: true,
     description: "Winddaten in km/h",
+    chartColor: "#f39c12", // Orange
+    chartYAxis: "y",
   },
-  {
-    value: "all",
-// ...
+  // --- END NEW SENSOR ---
+];
+
+// ... (sensorConfigMap)
 ```
 
-The backend (`/api/export-csv`) is already modular and will automatically handle `"wind_speed"` if it's in the `dataTypes` array, so no backend changes are needed for the export.
+### Configuration Options Explained:
 
+- **`sensorId`**: The exact name of the sensor you send in the JSON (e.g., `"wind_speed"`).
+- **`title`**: The display name for the card (e.g., "Windstärke").
+- **`unit`**: The fallback unit if the database doesn't provide one. Also used for labels.
+- **`icon`**: The icon component you imported (`Wind`).
+- **`formatting`**: A function to format the numeric value (e.g., `value.toFixed(1)`).
+- **`iconColor`, `bgColor`, etc.**: Tailwind CSS classes for styling the card.
+- **`showInHistory`**: **(Set to `true`)** Automatically adds the sensor to the `/history` page chart.
+- **`showInDownload`**: **(Set to `true`)** Automatically adds the sensor as an option in the CSV download modal.
+- **`description`**: Text shown in the download modal.
+- **`chartColor`**: The line color for the history chart.
+- **`chartYAxis`**: Which axis to use on the chart (`y` = left, `y2` = right).
+
+---
+
+## Step 3: You're Done\!
+
+That's it. By adding that single object, the application will automatically:
+
+1.  **Fetch Latest Data:** The `/api/latest` route will now query for `"wind_speed"` and include it in its response.
+2.  **Display Card:** The homepage will create a new state and render a new card for "Windstärke".
+3.  **Enable Download:** The CSV Export modal will show "Windstärke" as a selectable option.
+4.  **Show History:** The `/history` page will add a new line to the chart for "Windstärke".
