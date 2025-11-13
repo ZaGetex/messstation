@@ -49,3 +49,42 @@ export default function Logo({
     </div>
   );
 }
+
+export function Logo2({
+  src = "/Barkasse-Logo.png",
+  alt = "Barkasse Logo",
+  width = 60,
+  height = 60,
+  className = "",
+}: LogoProps) {
+  const [imageError, setImageError] = useState(false);
+
+  // Fallback-Logo wenn das Bild nicht geladen werden kann
+  const fallbackLogo = (
+    <div
+      className={`flex items-center justify-center bg-gradient-to-br from-accent-dark to-primary-300 text-white font-bold rounded-lg ${className}`}
+      style={{ width, height }}
+    >
+      <span className="text-sm">L2</span>
+    </div>
+  );
+
+  if (imageError) {
+    return fallbackLogo;
+  }
+
+  return (
+    <div className={`relative ${className}`}>
+      <Image
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        className="object-contain rounded-lg"
+        onError={() => setImageError(true)}
+        priority
+        unoptimized={true} // Force unoptimized for PNG files too
+      />
+    </div>
+  );
+}

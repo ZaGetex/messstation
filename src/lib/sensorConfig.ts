@@ -21,7 +21,7 @@ import {
     // A function to format the value for display
     formatting: (value: number) => string;
     iconColor: string; // e.g., "text-accent-dark"
-    bgColor: string; // e.g., "bg-accent-dark/10"
+    // bgColor removed - will be handled by page.tsx
     shadowColor: string; // e.g., "shadow-accent-dark/20"
     borderColor: string; // e.g., "hover:border-accent-dark/50"
     hoverTextColor: string; // e.g., "group-hover:text-accent-dark"
@@ -46,7 +46,6 @@ import {
       icon: Thermometer,
       formatting: (value) => value.toFixed(1),
       iconColor: "text-accent-dark",
-      bgColor: "bg-accent-dark/10",
       shadowColor: "shadow-accent-dark/20",
       borderColor: "hover:border-accent-dark/50",
       hoverTextColor: "group-hover:text-accent-dark",
@@ -63,7 +62,6 @@ import {
       icon: Droplets,
       formatting: (value) => value.toFixed(0),
       iconColor: "text-primary-200",
-      bgColor: "bg-primary-200/10",
       shadowColor: "shadow-primary-200/20",
       borderColor: "hover:border-primary-200/50",
       hoverTextColor: "group-hover:text-primary-200",
@@ -80,7 +78,6 @@ import {
       icon: Gauge,
       formatting: (value) => value.toFixed(0),
       iconColor: "text-primary-300",
-      bgColor: "bg-primary-300/10",
       shadowColor: "shadow-primary-300/20",
       borderColor: "hover:border-primary-300/50",
       hoverTextColor: "group-hover:text-primary-300",
@@ -99,7 +96,6 @@ import {
       // The API returns the location string in the `value` field
       formatting: (value) => String(value),
       iconColor: "text-primary-400",
-      bgColor: "bg-primary-400/10",
       shadowColor: "shadow-primary-400/20",
       borderColor: "hover:border-primary-400/50",
       hoverTextColor: "group-hover:text-primary-400",
@@ -118,7 +114,6 @@ import {
       icon: Wind,
       formatting: (value) => value.toFixed(1),
       iconColor: "text-gray-500",
-      bgColor: "bg-gray-500/10",
       shadowColor: "shadow-gray-500/20",
       borderColor: "hover:border-gray-500/50",
       hoverTextColor: "group-hover:text-gray-600",

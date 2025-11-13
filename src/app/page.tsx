@@ -146,7 +146,8 @@ export default function Home() {
               className={`group bg-background-light/40 dark:bg-primary-600/40 backdrop-blur-lg border border-primary-50/20 dark:border-primary-200/30 rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex flex-col items-center text-center transform transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl ${card.shadowColor} ${card.borderColor}`}
             >
               <div
-                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3 sm:mb-4 transition-colors duration-300 ${card.bgColor}`}
+                // --- THIS LINE IS CHANGED ---
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3 sm:mb-4 transition-colors duration-300 bg-background-light/70 dark:bg-primary-600/60"
               >
                 <card.Icon
                   className={`${card.iconColor} w-6 h-6 sm:w-8 sm:h-8`}
@@ -191,7 +192,7 @@ export default function Home() {
         </Link>
       </section>
 
-      {/* NEU: Verweis auf das übergeordnete Projekt */}
+      {/*Verweis auf das übergeordnete Projekt */}
       <p className="px-4 mt-3 text-xs text-center sm:text-sm text-primary-600/80 dark:text-primary-50/80">
         Ein Projekt des{" "}
         <a

@@ -4,7 +4,7 @@ import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import ThemeToggle from "../components/ThemeToggle";
-import Logo from "@/components/Logo";
+import Logo, { Logo2 } from "@/components/Logo";
 import DateTime from "@/components/DateTime";
 
 const geistSans = Geist({
@@ -51,10 +51,10 @@ export default function RootLayout({
                     className="flex items-center h-full"
                   />
                   <div className="w-[2px] bg-gray-400 dark:bg-gray-600 h-8 sm:h-12"></div>
-                  <Logo
+                  <Logo2
                     width={300}
                     height={120}
-                    className="flex items-center h-full"
+                    className="flex items-center h-full ml-[-22px] sm:ml-[-35px]"
                   />
                 </div>
               </div>
