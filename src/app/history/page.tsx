@@ -14,8 +14,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import DateTime from "../../components/DateTime";
+import { ArrowLeft, Loader2 } from "lucide-react"; // Added Loader2
 import DownloadButton from "../../components/DownloadButton";
 import { useTheme } from "../../contexts/ThemeContext";
 // @ts-ignore - chartjs-plugin-trendline doesn't have TypeScript definitions
@@ -35,45 +34,93 @@ ChartJS.register(
 
 type RangeKey = "1h" | "5h" | "1d" | "1w";
 
+// Sensor data type from the API
+type SensorData = {
+  ts: string; // ISO date string
+  sensor: string;
+  value: number;
+  unit: string;
+};
+
 const ranges: {
   key: RangeKey;
   label: string;
-  points: number;
-  minutesStep: number;
 }[] = [
-  { key: "1h", label: "Letzte Stunde", points: 60, minutesStep: 1 },
-  { key: "5h", label: "Letzte 5h", points: 60, minutesStep: 5 },
-  { key: "1d", label: "Letzter Tag", points: 96, minutesStep: 15 },
-  { key: "1w", label: "Letzte Woche", points: 84, minutesStep: 120 },
+  { key: "1h", label: "Letzte Stunde" },
+  { key: "5h", label: "Letzte 5h" },
+  { key: "1d", label: "Letzter Tag" },
+  { key: "1w", label: "Letzte Woche" },
 ];
 
-function generateFakeSeries(points: number, base: number, amplitude: number) {
-  const data: number[] = [];
-  for (let i = 0; i < points; i++) {
-    const noise = (Math.random() - 0.5) * amplitude * 0.2;
-    const wave = Math.sin((i / points) * Math.PI * 4) * amplitude;
-    data.push(base + wave + noise);
-  }
-  return data;
-}
-
-function useFakeData(range: RangeKey) {
-  const meta = ranges.find((r) => r.key === range)!;
-  const now = new Date();
+/**
+ * Processes the raw sensor data array from the API into a structure
+ * suitable for Chart.js.
+ * @param data Raw array of SensorData objects.
+ * @returns An object with arrays for labels, temperature, humidity, and pressure.
+ */
+function processChartData(data: SensorData[]) {
   const labels: string[] = [];
-  for (let i = meta.points - 1; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * meta.minutesStep * 60_000);
-    labels.push(
-      `${d.getHours().toString().padStart(2, "0")}:${d
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}`
-    );
+  const temperature: (number | null)[] = [];
+  const humidity: (number | null)[] = [];
+  const pressure: (number | null)[] = [];
+
+  // Use a Map to group data by timestamp
+  const dataByTimestamp = new Map<
+    string,
+    { temp: number | null; humid: number | null; press: number | null }
+  >();
+
+  // Use a Set to collect all unique timestamps
+  const allTimestamps = new Set<string>();
+
+  for (const reading of data) {
+    const ts = reading.ts;
+    allTimestamps.add(ts);
+
+    // Initialize an entry for this timestamp if it doesn't exist
+    if (!dataByTimestamp.has(ts)) {
+      dataByTimestamp.set(ts, { temp: null, humid: null, press: null });
+    }
+
+    const entry = dataByTimestamp.get(ts)!;
+
+    // Populate the entry based on the sensor type
+    if (reading.sensor === "temperature") {
+      entry.temp = reading.value;
+    } else if (reading.sensor === "humidity") {
+      entry.humid = reading.value;
+    } else if (reading.sensor === "air_pressure") {
+      // Note: Using 'air_pressure' as seen in your API
+      entry.press = reading.value;
+    }
   }
 
-  const temperature = generateFakeSeries(meta.points, 21.5, 3.5);
-  const humidity = generateFakeSeries(meta.points, 55, 10);
-  const pressure = generateFakeSeries(meta.points, 1013, 4);
+  // Sort timestamps chronologically
+  const sortedTimestamps = Array.from(allTimestamps).sort();
+
+  // Build the final arrays, inserting null for missing data
+  for (const ts of sortedTimestamps) {
+    const entry = dataByTimestamp.get(ts);
+
+    // Format timestamp to "HH:mm"
+    labels.push(
+      new Date(ts).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+
+    if (entry) {
+      temperature.push(entry.temp);
+      humidity.push(entry.humid);
+      pressure.push(entry.press);
+    } else {
+      // This case should not be hit if logic is correct, but as a fallback:
+      temperature.push(null);
+      humidity.push(null);
+      pressure.push(null);
+    }
+  }
 
   return { labels, temperature, humidity, pressure };
 }
@@ -81,8 +128,43 @@ function useFakeData(range: RangeKey) {
 export default function HistoryPage() {
   const [range, setRange] = useState<RangeKey>("1h");
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [chartData, setChartData] = useState<{
+    labels: string[];
+    temperature: (number | null)[];
+    humidity: (number | null)[];
+    pressure: (number | null)[];
+  }>({ labels: [], temperature: [], humidity: [], pressure: [] });
   const { theme } = useTheme();
-  const { labels, temperature, humidity, pressure } = useFakeData(range);
+
+  // Fetch data from the API when the 'range' state changes
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/history-chart?range=${range}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch chart data");
+        }
+        const apiResponse: { data: SensorData[] } = await response.json();
+        const processedData = processChartData(apiResponse.data);
+        setChartData(processedData);
+      } catch (error) {
+        console.error(error);
+        // Clear data on error
+        setChartData({
+          labels: [],
+          temperature: [],
+          humidity: [],
+          pressure: [],
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [range]); // Dependency array ensures this runs when 'range' changes
 
   useEffect(() => {
     const checkMobile = () => {
@@ -97,11 +179,11 @@ export default function HistoryPage() {
 
   const data = useMemo(
     () => ({
-      labels,
+      labels: chartData.labels,
       datasets: [
         {
           label: "Temperatur (°C)",
-          data: temperature,
+          data: chartData.temperature,
           borderColor: "#e74c3c",
           backgroundColor: "rgba(231, 76, 60, 0.15)",
           tension: 0.3,
@@ -110,7 +192,7 @@ export default function HistoryPage() {
         },
         {
           label: "Temperatur Trend",
-          data: temperature,
+          data: chartData.temperature,
           borderColor: "#e74c3c",
           borderDash: [5, 5],
           borderWidth: 2,
@@ -125,7 +207,7 @@ export default function HistoryPage() {
         },
         {
           label: "Luftfeuchtigkeit (%)",
-          data: humidity,
+          data: chartData.humidity,
           borderColor: "#3498db",
           backgroundColor: "rgba(52, 152, 219, 0.15)",
           tension: 0.3,
@@ -134,7 +216,7 @@ export default function HistoryPage() {
         },
         {
           label: "Luftfeuchtigkeit Trend",
-          data: humidity,
+          data: chartData.humidity,
           borderColor: "#3498db",
           borderDash: [5, 5],
           borderWidth: 2,
@@ -149,7 +231,7 @@ export default function HistoryPage() {
         },
         {
           label: "Luftdruck (hPa)",
-          data: pressure,
+          data: chartData.pressure,
           borderColor: "#27ae60",
           backgroundColor: "rgba(39, 174, 96, 0.15)",
           tension: 0.25,
@@ -159,7 +241,7 @@ export default function HistoryPage() {
         },
         {
           label: "Luftdruck Trend",
-          data: pressure,
+          data: chartData.pressure,
           borderColor: "#27ae60",
           borderDash: [5, 5],
           borderWidth: 2,
@@ -175,7 +257,7 @@ export default function HistoryPage() {
         },
       ],
     }),
-    [labels, temperature, humidity, pressure]
+    [chartData] // Re-calculate when chartData changes
   );
 
   const options = useMemo(
@@ -183,6 +265,7 @@ export default function HistoryPage() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index" as const, intersect: false },
+      spanGaps: true, // This will connect lines even if there are 'null' data points
       plugins: {
         legend: {
           position: "bottom" as const,
@@ -290,7 +373,14 @@ export default function HistoryPage() {
           className="p-1 border shadow-lg sm:p-4 bg-background-light/60 dark:bg-primary-600/60 backdrop-blur-md border-primary-50/30 dark:border-primary-200/50 rounded-2xl sm:rounded-3xl sm:p-6"
           style={{ height: isMobile ? 400 : 420 }}
         >
-          <Line data={data} options={options} />
+          {isLoading ? (
+            <div className="flex items-center justify-center w-full h-full text-text-primary dark:text-text-light">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span className="ml-2">Lade Verlaufsdaten...</span>
+            </div>
+          ) : (
+            <Line data={data} options={options} />
+          )}
         </div>
       </section>
     </main>
