@@ -2,7 +2,7 @@
 
 This guide explains how to add a new sensor to the Messstation dashboard.
 
-Your application is now highly modular. The database, data-intake API, dashboard, history page, and download modal are all driven by a **single configuration file**.
+The application is now highly modular. The database, data-intake API, dashboard, history page, and download modal are all driven by a **single configuration file**.
 
 Adding a new sensor is now a simple 2-step process.
 
@@ -12,7 +12,7 @@ Adding a new sensor is now a simple 2-step process.
 
 **This step is already complete.**
 
-Your database schema (`prisma/schema.prisma`) and the `/api/sensor-data` `POST` route are generic. They are designed to accept _any_ sensor data you send them without any code changes.
+The database schema (`prisma/schema.prisma`) and the `/api/sensor-data` `POST` route are generic. They are designed to accept _any_ sensor data you send them without any code changes.
 
 **All you have to do is configure your sensor hub (the device sending the data) to start sending new `POST` requests for your new sensor.**
 
@@ -34,7 +34,7 @@ The database will accept and store this data immediately.
 
 ## Step 2: Add the Sensor to the UI Configuration
 
-This is the **only file you need to edit**. This file acts as the "single source of truth" for your entire application.
+This is the **only file you need to edit**. This file acts as the "single source of truth" for the entire application.
 
 **File:** `src/lib/sensorConfig.ts`
 
