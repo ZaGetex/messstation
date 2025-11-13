@@ -1,10 +1,12 @@
+// src/app/page.tsx
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, MapPin, Thermometer, Droplets, Gauge } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import DownloadButton from "../components/DownloadButton";
+import { sensorConfig, sensorConfigMap } from "@/lib/sensorConfig"; // Import the new config
 
 // Utility function to get time difference and status
 const getTimeStatus = (timestamp: Date) => {
@@ -29,19 +31,33 @@ const LocationMap = dynamic(() => import("../components/LocationMap"), {
   ssr: false,
 });
 
+// Helper type for our dynamic state
+type SensorDataState = {
+  [key: string]: string; // Stores formatted value, e.g., "21.5 °C"
+};
+type SensorLastUpdatedState = {
+  [key: string]: Date; // Stores last update timestamp
+};
+
 export default function Home() {
-  const [data, setData] = useState({
-    location: "N/A",
-    temperature: "N/A",
-    humidity: "N/A",
-    pressure: "N/A",
-    lastUpdated: {
-      location: new Date(Date.now()),
-      temperature: new Date(Date.now()),
-      humidity: new Date(Date.now()),
-      pressure: new Date(Date.now()),
-    },
+  // --- DYNAMIC STATE ---
+  // Initialize state dynamically based on sensorConfig
+  const [data, setData] = useState<SensorDataState>(() => {
+    const initialState: SensorDataState = {};
+    sensorConfig.forEach((sensor) => {
+      initialState[sensor.sensorId] = "N/A";
+    });
+    return initialState;
   });
+
+  const [lastUpdated, setLastUpdated] = useState<SensorLastUpdatedState>(() => {
+    const initialState: SensorLastUpdatedState = {};
+    sensorConfig.forEach((sensor) => {
+      initialState[sensor.sensorId] = new Date(Date.now());
+    });
+    return initialState;
+  });
+  // --- END DYNAMIC STATE ---
 
   // Fetch latest sensor data from the API
   useEffect(() => {
@@ -51,38 +67,37 @@ export default function Home() {
         if (!response.ok) throw new Error("Failed to fetch data");
         const latest = await response.json();
 
-        setData((prev) => ({
-          location: latest.location ? latest.location.value : prev.location,
-          temperature: latest.temperature
-            ? `${latest.temperature.value.toFixed(1)} ${
-                latest.temperature.unit || ""
-              }`
-            : prev.temperature,
-          humidity: latest.humidity
-            ? `${latest.humidity.value.toFixed(0)} ${
-                latest.humidity.unit || ""
-              }`
-            : prev.humidity,
-          pressure: latest.pressure
-            ? `${latest.pressure.value.toFixed(0)} ${
-                latest.pressure.unit || ""
-              }`
-            : prev.pressure,
-          lastUpdated: {
-            location: latest.location
-              ? new Date(latest.location.ts)
-              : prev.lastUpdated.location,
-            temperature: latest.temperature
-              ? new Date(latest.temperature.ts)
-              : prev.lastUpdated.temperature,
-            humidity: latest.humidity
-              ? new Date(latest.humidity.ts)
-              : prev.lastUpdated.humidity,
-            pressure: latest.pressure
-              ? new Date(latest.pressure.ts)
-              : prev.lastUpdated.pressure,
-          },
-        }));
+        // --- DYNAMIC STATE UPDATE ---
+        setData((prevData) => {
+          const newData = { ...prevData };
+          for (const sensor of sensorConfig) {
+            const sensorApiData = latest[sensor.sensorId];
+            if (sensorApiData) {
+              if (sensor.sensorId === "location") {
+                // Location is special, value is a string from `sensorApiData.value`
+                newData.location = sensorApiData.value;
+              } else {
+                // All other sensors are numbers
+                newData[sensor.sensorId] = `${sensor.formatting(
+                  sensorApiData.value
+                )} ${sensorApiData.unit || sensor.unit || ""}`.trim();
+              }
+            }
+          }
+          return newData;
+        });
+
+        setLastUpdated((prevLastUpdated) => {
+          const newLastUpdated = { ...prevLastUpdated };
+          for (const sensor of sensorConfig) {
+            const sensorApiData = latest[sensor.sensorId];
+            if (sensorApiData) {
+              newLastUpdated[sensor.sensorId] = new Date(sensorApiData.ts);
+            }
+          }
+          return newLastUpdated;
+        });
+        // --- END DYNAMIC STATE UPDATE ---
       } catch (error) {
         console.error("Error fetching sensor data:", error);
         // Keep previous data on error
@@ -95,52 +110,21 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  const cardData = [
-    {
-      title: "Location",
-      value: data.location,
-      icon: MapPin,
-      iconColor: "text-primary-400",
-      bgColor: "bg-primary-400/10",
-      shadowColor: "shadow-primary-400/20",
-      borderColor: "hover:border-primary-400/50",
-      hoverTextColor: "group-hover:text-primary-400",
-      lastUpdated: data.lastUpdated.location,
-    },
-    {
-      title: "Temperatur",
-      value: data.temperature,
-      icon: Thermometer,
-      iconColor: "text-accent-dark",
-      bgColor: "bg-accent-dark/10",
-      shadowColor: "shadow-accent-dark/20",
-      borderColor: "hover:border-accent-dark/50",
-      hoverTextColor: "group-hover:text-accent-dark",
-      lastUpdated: data.lastUpdated.temperature,
-    },
-    {
-      title: "Luftfeuchtigkeit",
-      value: data.humidity,
-      icon: Droplets,
-      iconColor: "text-primary-200",
-      bgColor: "bg-primary-200/10",
-      shadowColor: "shadow-primary-200/20",
-      borderColor: "hover:border-primary-200/50",
-      hoverTextColor: "group-hover:text-primary-200",
-      lastUpdated: data.lastUpdated.humidity,
-    },
-    {
-      title: "Luftdruck",
-      value: data.pressure,
-      icon: Gauge,
-      iconColor: "text-primary-300",
-      bgColor: "bg-primary-300/10",
-      shadowColor: "shadow-primary-300/20",
-      borderColor: "hover:border-primary-300/50",
-      hoverTextColor: "group-hover:text-primary-300",
-      lastUpdated: data.lastUpdated.pressure,
-    },
-  ];
+  // --- DYNAMIC CARD DATA ---
+  // Build the card data array dynamically from the config and state
+  const cardData = sensorConfig.map((sensor) => {
+    const Icon = sensor.icon;
+    const timeStatus = getTimeStatus(lastUpdated[sensor.sensorId]);
+
+    return {
+      ...sensor, // Spread all properties from config (title, colors, etc.)
+      value: data[sensor.sensorId],
+      lastUpdated: lastUpdated[sensor.sensorId],
+      Icon, // Pass the component itself
+      timeStatus, // Pass the calculated time status
+    };
+  });
+  // --- END DYNAMIC CARD DATA ---
 
   return (
     <>
@@ -154,18 +138,19 @@ export default function Home() {
       </header>
 
       <section className="grid w-full grid-cols-1 gap-4 px-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-8 max-w-7xl sm:px-0">
-        {cardData.map((card, index) => {
-          const Icon = card.icon;
-          const timeStatus = getTimeStatus(card.lastUpdated);
+        {/* Render cards by mapping over the dynamic cardData array */}
+        {cardData.map((card) => {
           return (
             <div
-              key={index}
+              key={card.sensorId}
               className={`group bg-background-light/40 dark:bg-primary-600/40 backdrop-blur-lg border border-primary-50/20 dark:border-primary-200/30 rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex flex-col items-center text-center transform transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl ${card.shadowColor} ${card.borderColor}`}
             >
               <div
                 className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3 sm:mb-4 transition-colors duration-300 ${card.bgColor}`}
               >
-                <Icon className={`${card.iconColor} w-6 h-6 sm:w-8 sm:h-8`} />
+                <card.Icon
+                  className={`${card.iconColor} w-6 h-6 sm:w-8 sm:h-8`}
+                />
               </div>
               <h2 className="text-sm font-medium sm:text-base text-primary-600 dark:text-primary-50">
                 {card.title}
@@ -179,9 +164,9 @@ export default function Home() {
               {/* Update indicator */}
               <div className="flex items-center gap-2 mt-2 text-xs sm:mt-3 text-primary-500 dark:text-primary-300">
                 <div
-                  className={`w-2 h-2 rounded-full ${timeStatus.color}`}
+                  className={`w-2 h-2 rounded-full ${card.timeStatus.color}`}
                 ></div>
-                <span>{timeStatus.text}</span>
+                <span>{card.timeStatus.text}</span>
               </div>
             </div>
           );

@@ -1,3 +1,5 @@
+// src/app/history/page.tsx
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
@@ -11,12 +13,14 @@ import {
   Legend,
   Filler,
   CategoryScale,
+  ChartOptions,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react"; // Added Loader2
+import { ArrowLeft, Loader2 } from "lucide-react";
 import DownloadButton from "../../components/DownloadButton";
 import { useTheme } from "../../contexts/ThemeContext";
+import { sensorConfig, SensorConfig } from "@/lib/sensorConfig"; // Import the new config
 // @ts-ignore - chartjs-plugin-trendline doesn't have TypeScript definitions
 import trendline from "chartjs-plugin-trendline";
 
@@ -42,6 +46,11 @@ type SensorData = {
   unit: string;
 };
 
+// Get the sensors that should be displayed on the chart
+const chartSensors = sensorConfig.filter((s) => s.showInHistory);
+// Check if any sensor needs the y2 axis
+const useY2Axis = chartSensors.some((s) => s.chartYAxis === "y2");
+
 const ranges: {
   key: RangeKey;
   label: string;
@@ -53,55 +62,55 @@ const ranges: {
 ];
 
 /**
- * Processes the raw sensor data array from the API into a structure
- * suitable for Chart.js.
+ * Dynamically processes the raw sensor data array from the API.
  * @param data Raw array of SensorData objects.
- * @returns An object with arrays for labels, temperature, humidity, and pressure.
+ * @param sensorsToProcess The config array of sensors to include.
+ * @returns An object with arrays for labels and a dataset object.
  */
-function processChartData(data: SensorData[]) {
+function processChartData(
+  data: SensorData[],
+  sensorsToProcess: SensorConfig[]
+) {
   const labels: string[] = [];
-  const temperature: (number | null)[] = [];
-  const humidity: (number | null)[] = [];
-  const pressure: (number | null)[] = [];
+  // Create a map of sensor IDs to look for
+  const sensorIdSet = new Set(sensorsToProcess.map((s) => s.sensorId));
 
   // Use a Map to group data by timestamp
-  const dataByTimestamp = new Map<
-    string,
-    { temp: number | null; humid: number | null; press: number | null }
-  >();
-
+  const dataByTimestamp = new Map<string, Record<string, number | null>>();
   // Use a Set to collect all unique timestamps
   const allTimestamps = new Set<string>();
 
   for (const reading of data) {
-    const ts = reading.ts;
-    allTimestamps.add(ts);
+    // Only process sensors that are in our chart list
+    if (sensorIdSet.has(reading.sensor)) {
+      const ts = reading.ts;
+      allTimestamps.add(ts);
 
-    // Initialize an entry for this timestamp if it doesn't exist
-    if (!dataByTimestamp.has(ts)) {
-      dataByTimestamp.set(ts, { temp: null, humid: null, press: null });
-    }
+      if (!dataByTimestamp.has(ts)) {
+        // Initialize an entry for this timestamp
+        const newEntry: Record<string, number | null> = {};
+        for (const id of sensorIdSet) {
+          newEntry[id] = null;
+        }
+        dataByTimestamp.set(ts, newEntry);
+      }
 
-    const entry = dataByTimestamp.get(ts)!;
-
-    // Populate the entry based on the sensor type
-    if (reading.sensor === "temperature") {
-      entry.temp = reading.value;
-    } else if (reading.sensor === "humidity") {
-      entry.humid = reading.value;
-    } else if (reading.sensor === "air_pressure") {
-      // Note: Using 'air_pressure' as seen in your API
-      entry.press = reading.value;
+      // Populate the sensor value
+      dataByTimestamp.get(ts)![reading.sensor] = reading.value;
     }
   }
 
   // Sort timestamps chronologically
   const sortedTimestamps = Array.from(allTimestamps).sort();
 
-  // Build the final arrays, inserting null for missing data
-  for (const ts of sortedTimestamps) {
-    const entry = dataByTimestamp.get(ts);
+  // Initialize the datasets object
+  const datasets: Record<string, (number | null)[]> = {};
+  for (const id of sensorIdSet) {
+    datasets[id] = [];
+  }
 
+  // Build the final arrays
+  for (const ts of sortedTimestamps) {
     // Format timestamp to "HH:mm"
     labels.push(
       new Date(ts).toLocaleTimeString([], {
@@ -110,19 +119,21 @@ function processChartData(data: SensorData[]) {
       })
     );
 
-    if (entry) {
-      temperature.push(entry.temp);
-      humidity.push(entry.humid);
-      pressure.push(entry.press);
-    } else {
-      // This case should not be hit if logic is correct, but as a fallback:
-      temperature.push(null);
-      humidity.push(null);
-      pressure.push(null);
+    const entry = dataByTimestamp.get(ts);
+    for (const id of sensorIdSet) {
+      datasets[id].push(entry ? entry[id] : null);
     }
   }
 
-  return { labels, temperature, humidity, pressure };
+  return { labels, datasets };
+}
+
+// Helper to convert hex to rgba
+function hexToRgba(hex: string, alpha: number) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export default function HistoryPage() {
@@ -131,10 +142,8 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [chartData, setChartData] = useState<{
     labels: string[];
-    temperature: (number | null)[];
-    humidity: (number | null)[];
-    pressure: (number | null)[];
-  }>({ labels: [], temperature: [], humidity: [], pressure: [] });
+    datasets: Record<string, (number | null)[]>;
+  }>({ labels: [], datasets: {} });
   const { theme } = useTheme();
 
   // Fetch data from the API when the 'range' state changes
@@ -147,191 +156,139 @@ export default function HistoryPage() {
           throw new Error("Failed to fetch chart data");
         }
         const apiResponse: { data: SensorData[] } = await response.json();
-        const processedData = processChartData(apiResponse.data);
+        // Process data only for the sensors we want to chart
+        const processedData = processChartData(apiResponse.data, chartSensors);
         setChartData(processedData);
       } catch (error) {
         console.error(error);
-        // Clear data on error
-        setChartData({
-          labels: [],
-          temperature: [],
-          humidity: [],
-          pressure: [],
-        });
+        setChartData({ labels: [], datasets: {} });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [range]); // Dependency array ensures this runs when 'range' changes
+  }, [range]);
 
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
     };
-
     checkMobile();
     window.addEventListener("resize", checkMobile);
-
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // --- DYNAMIC CHART DATASET ---
+  // Build Chart.js datasets dynamically from config and fetched data
   const data = useMemo(
     () => ({
       labels: chartData.labels,
-      datasets: [
-        {
-          label: "Temperatur (°C)",
-          data: chartData.temperature,
-          borderColor: "#e74c3c",
-          backgroundColor: "rgba(231, 76, 60, 0.15)",
-          tension: 0.3,
-          fill: true,
-          pointRadius: 0,
-        },
-        {
-          label: "Temperatur Trend",
-          data: chartData.temperature,
-          borderColor: "#e74c3c",
-          borderDash: [5, 5],
-          borderWidth: 2,
-          pointRadius: 0,
-          showLine: true,
-          trendlineLinear: {
-            colorMin: "#e74c3c",
-            colorMax: "#e74c3c",
-            lineStyle: "dashed",
-            width: 2,
+      datasets: chartSensors
+        .flatMap((sensor) => [
+          // The main data line
+          {
+            label: `${sensor.title} (${sensor.unit || ""})`,
+            data: chartData.datasets[sensor.sensorId] || [],
+            borderColor: sensor.chartColor,
+            backgroundColor: hexToRgba(sensor.chartColor, 0.15),
+            tension: 0.3,
+            fill: true,
+            pointRadius: 0,
+            yAxisID: sensor.chartYAxis || "y",
           },
-        },
-        {
-          label: "Luftfeuchtigkeit (%)",
-          data: chartData.humidity,
-          borderColor: "#3498db",
-          backgroundColor: "rgba(52, 152, 219, 0.15)",
-          tension: 0.3,
-          fill: true,
-          pointRadius: 0,
-        },
-        {
-          label: "Luftfeuchtigkeit Trend",
-          data: chartData.humidity,
-          borderColor: "#3498db",
-          borderDash: [5, 5],
-          borderWidth: 2,
-          pointRadius: 0,
-          showLine: true,
-          trendlineLinear: {
-            colorMin: "#3498db",
-            colorMax: "#3498db",
-            lineStyle: "dashed",
-            width: 2,
+          // The trendline
+          {
+            label: `${sensor.title} Trend`,
+            data: chartData.datasets[sensor.sensorId] || [],
+            borderColor: sensor.chartColor,
+            borderDash: [5, 5],
+            borderWidth: 2,
+            pointRadius: 0,
+            showLine: true,
+            yAxisID: sensor.chartYAxis || "y",
+            trendlineLinear: {
+              colorMin: sensor.chartColor,
+              colorMax: sensor.chartColor,
+              lineStyle: "dashed",
+              width: 2,
+            },
           },
-        },
-        {
-          label: "Luftdruck (hPa)",
-          data: chartData.pressure,
-          borderColor: "#27ae60",
-          backgroundColor: "rgba(39, 174, 96, 0.15)",
-          tension: 0.25,
-          fill: true,
-          pointRadius: 0,
-          yAxisID: "y2",
-        },
-        {
-          label: "Luftdruck Trend",
-          data: chartData.pressure,
-          borderColor: "#27ae60",
-          borderDash: [5, 5],
-          borderWidth: 2,
-          pointRadius: 0,
-          showLine: true,
-          yAxisID: "y2",
-          trendlineLinear: {
-            colorMin: "#27ae60",
-            colorMax: "#27ae60",
-            lineStyle: "dashed",
-            width: 2,
-          },
-        },
-      ],
+        ])
+        .filter((d) => d.data.length > 0), // Filter out datasets with no data
     }),
     [chartData] // Re-calculate when chartData changes
   );
+  // --- END DYNAMIC CHART DATASET ---
 
-  const options = useMemo(
-    () => ({
+  // --- DYNAMIC CHART OPTIONS ---
+  // Dynamically create options, including the y2 axis if needed
+  const options = useMemo((): ChartOptions<"line"> => {
+    const scales: ChartOptions<"line">["scales"] = {
+      x: {
+        ticks: {
+          color: theme === "dark" ? "#d1d5db" : "#042061",
+          font: { size: isMobile ? 8 : 11 },
+        },
+        grid: {
+          color:
+            theme === "dark"
+              ? "rgba(75, 85, 99, 0.3)"
+              : "rgba(165, 186, 215, 0.2)",
+        },
+      },
+      y: {
+        position: "left" as const,
+        ticks: {
+          color: theme === "dark" ? "#d1d5db" : "#042061",
+          font: { size: isMobile ? 8 : 11 },
+        },
+        grid: {
+          color:
+            theme === "dark"
+              ? "rgba(75, 85, 99, 0.3)"
+              : "rgba(165, 186, 215, 0.2)",
+        },
+      },
+    };
+
+    // If any sensor uses y2, add it to the scales
+    if (useY2Axis) {
+      scales.y2 = {
+        position: "right" as const,
+        ticks: {
+          color: theme === "dark" ? "#d1d5db" : "#042061",
+          font: { size: isMobile ? 8 : 11 },
+        },
+        grid: { drawOnChartArea: false },
+      };
+    }
+
+    return {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index" as const, intersect: false },
-      spanGaps: true, // This will connect lines even if there are 'null' data points
+      spanGaps: true,
       plugins: {
         legend: {
           position: "bottom" as const,
           labels: {
             color: theme === "dark" ? "#e5e7eb" : "#011541",
-            font: {
-              size: isMobile ? 8 : 12,
-            },
+            font: { size: isMobile ? 8 : 12 },
             padding: isMobile ? 6 : 12,
             boxWidth: isMobile ? 8 : 16,
           },
         },
         tooltip: {
           enabled: true,
-          titleFont: {
-            size: isMobile ? 10 : 13,
-          },
-          bodyFont: {
-            size: isMobile ? 9 : 12,
-          },
+          titleFont: { size: isMobile ? 10 : 13 },
+          bodyFont: { size: isMobile ? 9 : 12 },
         },
       },
-      scales: {
-        x: {
-          ticks: {
-            color: theme === "dark" ? "#d1d5db" : "#042061",
-            font: {
-              size: isMobile ? 8 : 11,
-            },
-          },
-          grid: {
-            color:
-              theme === "dark"
-                ? "rgba(75, 85, 99, 0.3)"
-                : "rgba(165, 186, 215, 0.2)",
-          },
-        },
-        y: {
-          position: "left" as const,
-          ticks: {
-            color: theme === "dark" ? "#d1d5db" : "#042061",
-            font: {
-              size: isMobile ? 8 : 11,
-            },
-          },
-          grid: {
-            color:
-              theme === "dark"
-                ? "rgba(75, 85, 99, 0.3)"
-                : "rgba(165, 186, 215, 0.2)",
-          },
-        },
-        y2: {
-          position: "right" as const,
-          ticks: {
-            color: theme === "dark" ? "#d1d5db" : "#042061",
-            font: {
-              size: isMobile ? 8 : 11,
-            },
-          },
-          grid: { drawOnChartArea: false },
-        },
-      },
-    }),
-    [isMobile, theme]
-  );
+      scales, // Add the dynamically generated scales
+    };
+  }, [isMobile, theme]);
+  // --- END DYNAMIC CHART OPTIONS ---
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-1 bg-gradient-to-br from-background-light via-accent-light to-primary-50 dark:from-background-dark dark:via-primary-600 dark:to-primary-700 sm:p-6 md:p-10">

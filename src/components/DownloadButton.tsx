@@ -1,21 +1,18 @@
+// src/components/DownloadButton.tsx
+
 "use client";
 
 import React, { useState } from "react";
-import {
-  Download,
-  Calendar,
-  FileText,
-  Clock,
-  X,
-  Loader2, // Added a loader icon
-} from "lucide-react";
+import { Download, Calendar, FileText, Clock, X, Loader2 } from "lucide-react";
+import { sensorConfig } from "@/lib/sensorConfig"; // Import the new config
 
 interface DownloadButtonProps {
   className?: string;
 }
 
 type TimeSpan = "1h" | "2h" | "6h" | "12h" | "1d" | "1w" | "custom";
-type DataType = "temperature" | "humidity" | "pressure" | "location" | "all";
+// The 'DataType' is now any sensorId string, or 'all'
+type DataType = string;
 
 const timeSpanOptions: { value: TimeSpan; label: string }[] = [
   { value: "1h", label: "Letzte Stunde" },
@@ -27,39 +24,35 @@ const timeSpanOptions: { value: TimeSpan; label: string }[] = [
   { value: "custom", label: "Benutzerdefiniert" },
 ];
 
+// --- DYNAMIC DATA TYPE OPTIONS ---
+// Build the options dynamically from the sensor config
 const dataTypeOptions: {
   value: DataType;
   label: string;
   description: string;
 }[] = [
-  {
-    value: "temperature",
-    label: "Temperatur",
-    description: "Temperaturdaten in °C",
-  },
-  {
-    value: "humidity",
-    label: "Luftfeuchtigkeit",
-    description: "Feuchtigkeitsdaten in %",
-  },
-  { value: "pressure", label: "Luftdruck", description: "Druckdaten in hPa" },
-  {
-    value: "location",
-    label: "Standort",
-    description: "GPS-Koordinaten und Adresse",
-  },
+  // Filter config for sensors with showInDownload === true
+  ...sensorConfig
+    .filter((sensor) => sensor.showInDownload)
+    .map((sensor) => ({
+      value: sensor.sensorId,
+      label: sensor.title,
+      description: sensor.description,
+    })),
+  // Add the "all" option at the end
   {
     value: "all",
     label: "Alle Daten",
     description: "Alle verfügbaren Messwerte",
   },
 ];
+// --- END DYNAMIC DATA TYPE OPTIONS ---
 
 export default function DownloadButton({
   className = "",
 }: DownloadButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // For loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDataTypes, setSelectedDataTypes] = useState<DataType[]>([
     "all",
   ]);
@@ -69,15 +62,12 @@ export default function DownloadButton({
     end: "",
   });
 
-  // Prevent body scroll when modal is open
   React.useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
-
-    // Cleanup function to restore scroll when component unmounts
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -102,7 +92,6 @@ export default function DownloadButton({
   const handleDownload = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Build query parameters
       const params = new URLSearchParams();
       params.set("dataTypes", selectedDataTypes.join(","));
       params.set("timeSpan", selectedTimeSpan);
@@ -119,29 +108,18 @@ export default function DownloadButton({
         }
       }
 
-      // 2. Create the full URL
       const url = `/api/export-csv?${params.toString()}`;
-
-      // 3. Trigger the download
-      // This will open the URL, and because the server sends
-      // 'Content-Disposition: attachment', the browser will
-      // automatically start a file download.
       window.open(url, "_blank");
 
-      // Close the modal after a short delay
       setTimeout(() => {
         setIsOpen(false);
       }, 500);
     } catch (error) {
       console.error("Failed to start download:", error);
-      // Here you could show an error message to the user
-      // Note: alert() is avoided in your project setup, but as a fallback:
-      // alert("Fehler beim Starten des Downloads.");
     } finally {
-      // Reset loading state
       setTimeout(() => {
         setIsSubmitting(false);
-      }, 1000); // Give browser time to start download
+      }, 1000);
     }
   };
 
@@ -207,6 +185,7 @@ export default function DownloadButton({
                   Datentypen auswählen
                 </h3>
                 <div className="grid grid-cols-1 gap-1 sm:gap-2">
+                  {/* Render options dynamically */}
                   {dataTypeOptions.map((option) => (
                     <label
                       key={option.value}
