@@ -51,7 +51,7 @@ export default function Logo({
 }
 
 export function Logo2({
-  src = "/Barkasse-Logo.png",
+  src = "/Barkasse-Logo-alt.png",
   alt = "Barkasse Logo",
   width = 60,
   height = 60,

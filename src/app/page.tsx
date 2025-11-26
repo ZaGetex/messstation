@@ -133,7 +133,7 @@ export default function Home() {
           Barkasse Messstation Dashboard
         </h1>
         <p className="mt-4 text-base sm:text-lg md:text-xl text-primary-600 dark:text-primary-50">
-          Live-Messwerte deiner Station auf einen Blick
+          Live-Messwerte der Station auf einen Blick
         </p>
       </header>
 
@@ -150,7 +150,7 @@ export default function Home() {
                 className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3 sm:mb-4 transition-colors duration-300 bg-background-light/70 dark:bg-primary-600/60"
               >
                 <card.Icon
-                  className={`${card.iconColor} w-6 h-6 sm:w-8 sm:h-8`}
+                  className={`${card.iconColor} dark:text-primary-50 w-6 h-6 sm:w-8 sm:h-8`}
                 />
               </div>
               <h2 className="text-sm font-medium sm:text-base text-primary-600 dark:text-primary-50">
@@ -163,7 +163,7 @@ export default function Home() {
               </p>
 
               {/* Update indicator */}
-              <div className="flex items-center gap-2 mt-2 text-xs sm:mt-3 text-primary-500 dark:text-primary-300">
+              <div className="flex items-center gap-2 mt-2 text-xs sm:mt-3 text-primary-500 dark:text-primary-50">
                 <div
                   className={`w-2 h-2 rounded-full ${card.timeStatus.color}`}
                 ></div>
