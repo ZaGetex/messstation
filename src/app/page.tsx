@@ -7,23 +7,25 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import DownloadButton from "../components/DownloadButton";
 import { sensorConfig, sensorConfigMap } from "@/lib/sensorConfig"; // Import the new config
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslations } from "@/lib/translations";
 
 // Utility function to get time difference and status
-const getTimeStatus = (timestamp: Date) => {
+const getTimeStatus = (timestamp: Date, t: ReturnType<typeof useTranslations>) => {
   const now = new Date();
   const diffInMinutes = Math.floor(
     (now.getTime() - timestamp.getTime()) / (1000 * 60)
   );
 
   if (diffInMinutes <= 1) {
-    return { color: "bg-green-500", text: "Now" };
+    return { color: "bg-green-500", text: t.timeStatus.now };
   } else if (diffInMinutes <= 5) {
-    return { color: "bg-orange-500", text: `${diffInMinutes} Min. ago` };
+    return { color: "bg-orange-500", text: `${diffInMinutes} ${t.timeStatus.minutesAgo}` };
   } else if (diffInMinutes <= 60) {
-    return { color: "bg-red-500", text: `${diffInMinutes} Min. ago` };
+    return { color: "bg-red-500", text: `${diffInMinutes} ${t.timeStatus.minutesAgo}` };
   } else {
     const diffInHours = Math.floor(diffInMinutes / 60);
-    return { color: "bg-red-600", text: `${diffInHours}h ago` };
+    return { color: "bg-red-600", text: `${diffInHours}${t.timeStatus.hoursAgo}` };
   }
 };
 
@@ -40,6 +42,9 @@ type SensorLastUpdatedState = {
 };
 
 export default function Home() {
+  const { language } = useLanguage();
+  const t = useTranslations(language);
+  
   // --- DYNAMIC STATE ---
   // Initialize state dynamically based on sensorConfig
   const [data, setData] = useState<SensorDataState>(() => {
@@ -114,7 +119,7 @@ export default function Home() {
   // Build the card data array dynamically from the config and state
   const cardData = sensorConfig.map((sensor) => {
     const Icon = sensor.icon;
-    const timeStatus = getTimeStatus(lastUpdated[sensor.sensorId]);
+    const timeStatus = getTimeStatus(lastUpdated[sensor.sensorId], t);
 
     return {
       ...sensor, // Spread all properties from config (title, colors, etc.)
@@ -130,10 +135,10 @@ export default function Home() {
     <>
       <header className="px-4 mt-16 mb-8 text-center sm:mt-24 sm:mb-12">
         <h1 className="text-3xl font-black text-transparent sm:text-5xl md:text-7xl bg-clip-text bg-gradient-to-r from-primary-400 to-accent-medium dark:from-accent-light dark:to-primary-400">
-          Barkasse Messstation Dashboard
+          {t.home.title}
         </h1>
         <p className="mt-4 text-base sm:text-lg md:text-xl text-primary-600 dark:text-primary-50">
-          Live-Messwerte der Station auf einen Blick
+          {t.home.subtitle}
         </p>
       </header>
 
@@ -146,7 +151,6 @@ export default function Home() {
               className={`group bg-background-light/40 dark:bg-primary-600/40 backdrop-blur-lg border border-primary-50/20 dark:border-primary-200/30 rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex flex-col items-center text-center transform transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl ${card.shadowColor} ${card.borderColor}`}
             >
               <div
-                // --- THIS LINE IS CHANGED ---
                 className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3 sm:mb-4 transition-colors duration-300 bg-background-light/70 dark:bg-primary-600/60"
               >
                 <card.Icon
@@ -154,7 +158,7 @@ export default function Home() {
                 />
               </div>
               <h2 className="text-sm font-medium sm:text-base text-primary-600 dark:text-primary-50">
-                {card.title}
+                {t.sensors[card.sensorId]?.title || card.title}
               </h2>
               <p
                 className={`text-2xl sm:text-4xl font-bold text-text-primary dark:text-text-light mt-2 transition-colors duration-300 ${card.hoverTextColor}`}
@@ -176,7 +180,7 @@ export default function Home() {
 
       <section className="w-full px-4 mt-6 max-w-7xl sm:mt-8 sm:px-0">
         <h3 className="mb-3 text-xs font-semibold tracking-wide uppercase sm:text-sm text-primary-600 dark:text-primary-50">
-          Karte | 52° 31' 12.0288'' N
+          {t.home.mapTitle}
         </h3>{" "}
         {/*TODO: Dynmaische Koordinaten aus der Datenbank*/}
         <LocationMap query={data.location} height={280} />
@@ -188,20 +192,20 @@ export default function Home() {
           href="/history"
           className="px-6 py-3 font-semibold text-center transition-transform transform border shadow-lg sm:px-8 sm:py-4 bg-background-light/60 dark:bg-primary-600/60 backdrop-blur-sm text-text-primary dark:text-text-light rounded-xl sm:rounded-2xl border-primary-50/30 dark:border-primary-200/50 hover:scale-105 hover:-translate-y-1 hover:bg-background-light/80 dark:hover:bg-primary-500/80 focus:outline-none focus:ring-4 focus:ring-primary-400/50"
         >
-          Verlauf ansehen
+          {t.home.viewHistory}
         </Link>
       </section>
 
       {/*Verweis auf das übergeordnete Projekt */}
       <p className="px-4 mt-3 text-xs text-center sm:text-sm text-primary-600/80 dark:text-primary-50/80">
-        Ein Projekt des{" "}
+        {t.home.projectText}{" "}
         <a
           href="https://libertalia-kollektiv.eu/"
           target="_blank"
           rel="noopener noreferrer"
           className="font-semibold underline transition-colors text-primary-400 dark:text-accent-light hover:text-accent-medium dark:hover:text-primary-400"
         >
-          Libertalia Kollektivs
+          {t.home.projectLink}
         </a>
         .
       </p>

@@ -13,7 +13,8 @@ import {
   export interface SensorConfig {
     // --- Universal ---
     sensorId: string; // The ID used in the database (e.g., "temperature")
-    title: string; // The human-readable title (e.g., "Temperatur")
+    title: string; // The German title (e.g., "Temperatur")
+    titleEn: string; // The English title (e.g., "Temperature")
     unit?: string; // The unit (e.g., "°C")
     icon: LucideIcon; // The icon component from lucide-react
   
@@ -29,7 +30,8 @@ import {
     // --- History & Download ---
     showInHistory: boolean; // Show this sensor on the history chart
     showInDownload: boolean; // Make this sensor an option in the CSV download
-    description: string; // Description for the download modal
+    description: string; // German description for the download modal
+    descriptionEn: string; // English description for the download modal
   
     // --- History Chart Specifics ---
     chartColor: string; // Hex color for the chart line (e.g., "#e74c3c")
@@ -42,6 +44,7 @@ import {
     {
       sensorId: "temperature",
       title: "Temperatur",
+      titleEn: "Temperature",
       unit: "°C", // Fallback Default Unit if no unit is provided
       icon: Thermometer,
       formatting: (value) => value.toFixed(1),
@@ -52,12 +55,14 @@ import {
       showInHistory: true,
       showInDownload: true,
       description: "Temperaturdaten in °C",
+      descriptionEn: "Temperature data in °C",
       chartColor: "#e74c3c", // Red
       chartYAxis: "y",
     },
     {
       sensorId: "humidity",
       title: "Luftfeuchtigkeit",
+      titleEn: "Humidity",
       unit: "%",
       icon: Droplets,
       formatting: (value) => value.toFixed(0),
@@ -68,12 +73,14 @@ import {
       showInHistory: true,
       showInDownload: true,
       description: "Feuchtigkeitsdaten in %",
+      descriptionEn: "Humidity data in %",
       chartColor: "#3498db", // Blue
       chartYAxis: "y",
     },
     {
       sensorId: "air_pressure", // Matches the ID in your /api/latest route
       title: "Luftdruck",
+      titleEn: "Air Pressure",
       unit: "hPa",
       icon: Gauge,
       formatting: (value) => value.toFixed(0),
@@ -84,12 +91,14 @@ import {
       showInHistory: true,
       showInDownload: true,
       description: "Druckdaten in hPa",
+      descriptionEn: "Pressure data in hPa",
       chartColor: "#27ae60", // Green
       chartYAxis: "y2", // Use the right-hand Y-axis
     },
     {
       sensorId: "location",
       title: "Location",
+      titleEn: "Location",
       unit: "", // Location value is a string, not a number
       icon: MapPin,
       // Special formatting for location (which is a string)
@@ -102,14 +111,17 @@ import {
       showInHistory: false, // Don't show location on the history chart
       showInDownload: true,
       description: "GPS-Koordinaten und Adresse",
+      descriptionEn: "GPS coordinates and address",
       chartColor: "#9b59b6", // Purple (not used)
     },
     // --- ADD NEW SENSORS HERE ---
-    // Example for a new "Wind" sensor:
+    // When adding a new sensor, make sure to include both German (title, description) 
+    // and English (titleEn, descriptionEn) translations:
     /*
     {
       sensorId: "wind_speed",
       title: "Windstärke",
+      titleEn: "Wind Speed",
       unit: "km/h",
       icon: Wind,
       formatting: (value) => value.toFixed(1),
@@ -120,6 +132,7 @@ import {
       showInHistory: true,
       showInDownload: true,
       description: "Winddaten in km/h",
+      descriptionEn: "Wind data in km/h",
       chartColor: "#f39c12", // Orange
       chartYAxis: "y",
     },

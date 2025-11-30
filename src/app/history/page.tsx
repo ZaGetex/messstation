@@ -20,6 +20,8 @@ import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import DownloadButton from "../../components/DownloadButton";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { useTranslations } from "@/lib/translations";
 import { sensorConfig, SensorConfig } from "@/lib/sensorConfig"; // Import the new config
 // @ts-ignore - chartjs-plugin-trendline doesn't have TypeScript definitions
 import trendline from "chartjs-plugin-trendline";
@@ -51,15 +53,7 @@ const chartSensors = sensorConfig.filter((s) => s.showInHistory);
 // Check if any sensor needs the y2 axis
 const useY2Axis = chartSensors.some((s) => s.chartYAxis === "y2");
 
-const ranges: {
-  key: RangeKey;
-  label: string;
-}[] = [
-  { key: "1h", label: "Letzte Stunde" },
-  { key: "5h", label: "Letzte 5h" },
-  { key: "1d", label: "Letzter Tag" },
-  { key: "1w", label: "Letzte Woche" },
-];
+// Ranges will be generated dynamically based on language
 
 /**
  * Dynamically processes the raw sensor data array from the API.
@@ -145,6 +139,18 @@ export default function HistoryPage() {
     datasets: Record<string, (number | null)[]>;
   }>({ labels: [], datasets: {} });
   const { theme } = useTheme();
+  const { language } = useLanguage();
+  const t = useTranslations(language);
+
+  const ranges: {
+    key: RangeKey;
+    label: string;
+  }[] = [
+    { key: "1h", label: t.history.ranges["1h"] },
+    { key: "5h", label: t.history.ranges["5h"] },
+    { key: "1d", label: t.history.ranges["1d"] },
+    { key: "1w", label: t.history.ranges["1w"] },
+  ];
 
   // Fetch data from the API when the 'range' state changes
   useEffect(() => {
@@ -188,7 +194,7 @@ export default function HistoryPage() {
         .flatMap((sensor) => [
           // The main data line
           {
-            label: `${sensor.title} (${sensor.unit || ""})`,
+            label: `${t.sensors[sensor.sensorId]?.title || sensor.title} (${sensor.unit || ""})`,
             data: chartData.datasets[sensor.sensorId] || [],
             borderColor: sensor.chartColor,
             backgroundColor: hexToRgba(sensor.chartColor, 0.15),
@@ -199,7 +205,7 @@ export default function HistoryPage() {
           },
           // The trendline
           {
-            label: `${sensor.title} Trend`,
+            label: `${t.sensors[sensor.sensorId]?.title || sensor.title} ${t.history.trend}`,
             data: chartData.datasets[sensor.sensorId] || [],
             borderColor: sensor.chartColor,
             borderDash: [5, 5],
@@ -299,10 +305,10 @@ export default function HistoryPage() {
             className="flex items-center gap-2 px-3 py-2 transition-colors border sm:px-4 rounded-xl bg-background-light/70 dark:bg-primary-600/60 text-text-primary dark:text-text-light border-primary-50/30 dark:border-primary-200/50 hover:bg-background-light/90 dark:hover:bg-primary-500/70"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Zurück</span>
+            <span className="hidden sm:inline">{t.history.back}</span>
           </Link>
           <h1 className="text-xl font-bold sm:text-2xl text-text-primary dark:text-text-light">
-            Verlauf
+            {t.history.title}
           </h1>
         </div>
         <div className="flex flex-col items-start w-full gap-4 sm:flex-row sm:items-center sm:w-auto">
@@ -333,7 +339,7 @@ export default function HistoryPage() {
           {isLoading ? (
             <div className="flex items-center justify-center w-full h-full text-text-primary dark:text-text-light">
               <Loader2 className="w-6 h-6 animate-spin" />
-              <span className="ml-2">Lade Verlaufsdaten...</span>
+              <span className="ml-2">{t.history.loading}</span>
             </div>
           ) : (
             <Line data={data} options={options} />

@@ -5,6 +5,8 @@
 import React, { useState } from "react";
 import { Download, Calendar, FileText, Clock, X, Loader2 } from "lucide-react";
 import { sensorConfig } from "@/lib/sensorConfig"; // Import the new config
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslations } from "@/lib/translations";
 
 interface DownloadButtonProps {
   className?: string;
@@ -14,43 +16,12 @@ type TimeSpan = "1h" | "2h" | "6h" | "12h" | "1d" | "1w" | "custom";
 // The 'DataType' is now any sensorId string, or 'all'
 type DataType = string;
 
-const timeSpanOptions: { value: TimeSpan; label: string }[] = [
-  { value: "1h", label: "Letzte Stunde" },
-  { value: "2h", label: "Letzte 2 Stunden" },
-  { value: "6h", label: "Letzte 6 Stunden" },
-  { value: "12h", label: "Letzte 12 Stunden" },
-  { value: "1d", label: "Letzter Tag" },
-  { value: "1w", label: "Letzte Woche" },
-  { value: "custom", label: "Benutzerdefiniert" },
-];
-
-// --- DYNAMIC DATA TYPE OPTIONS ---
-// Build the options dynamically from the sensor config
-const dataTypeOptions: {
-  value: DataType;
-  label: string;
-  description: string;
-}[] = [
-  // Filter config for sensors with showInDownload === true
-  ...sensorConfig
-    .filter((sensor) => sensor.showInDownload)
-    .map((sensor) => ({
-      value: sensor.sensorId,
-      label: sensor.title,
-      description: sensor.description,
-    })),
-  // Add the "all" option at the end
-  {
-    value: "all",
-    label: "Alle Daten",
-    description: "Alle verfügbaren Messwerte",
-  },
-];
-// --- END DYNAMIC DATA TYPE OPTIONS ---
-
 export default function DownloadButton({
   className = "",
 }: DownloadButtonProps) {
+  const { language } = useLanguage();
+  const t = useTranslations(language);
+  
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDataTypes, setSelectedDataTypes] = useState<DataType[]>([
@@ -61,6 +32,40 @@ export default function DownloadButton({
     start: "",
     end: "",
   });
+
+  const timeSpanOptions: { value: TimeSpan; label: string }[] = [
+    { value: "1h", label: t.download.timeSpans["1h"] },
+    { value: "2h", label: t.download.timeSpans["2h"] },
+    { value: "6h", label: t.download.timeSpans["6h"] },
+    { value: "12h", label: t.download.timeSpans["12h"] },
+    { value: "1d", label: t.download.timeSpans["1d"] },
+    { value: "1w", label: t.download.timeSpans["1w"] },
+    { value: "custom", label: t.download.timeSpans.custom },
+  ];
+
+  // --- DYNAMIC DATA TYPE OPTIONS ---
+  // Build the options dynamically from the sensor config
+  const dataTypeOptions: {
+    value: DataType;
+    label: string;
+    description: string;
+  }[] = [
+    // Filter config for sensors with showInDownload === true
+    ...sensorConfig
+      .filter((sensor) => sensor.showInDownload)
+      .map((sensor) => ({
+        value: sensor.sensorId,
+        label: t.sensors[sensor.sensorId]?.title || sensor.title,
+        description: t.sensors[sensor.sensorId]?.description || sensor.description,
+      })),
+    // Add the "all" option at the end
+    {
+      value: "all",
+      label: t.download.dataTypes.all,
+      description: t.download.dataTypes.allDescription,
+    },
+  ];
+  // --- END DYNAMIC DATA TYPE OPTIONS ---
 
   React.useEffect(() => {
     if (isOpen) {
@@ -124,13 +129,13 @@ export default function DownloadButton({
   };
 
   const getSelectedDataTypesLabel = () => {
-    if (selectedDataTypes.includes("all")) return "Alle Daten";
-    if (selectedDataTypes.length === 0) return "Keine Auswahl";
+    if (selectedDataTypes.includes("all")) return t.download.dataTypes.all;
+    if (selectedDataTypes.length === 0) return t.download.dataTypes.noSelection;
     if (selectedDataTypes.length === 1) {
       return dataTypeOptions.find((opt) => opt.value === selectedDataTypes[0])
         ?.label;
     }
-    return `${selectedDataTypes.length} Datentypen`;
+    return `${selectedDataTypes.length} ${t.download.dataTypes.multipleTypes}`;
   };
 
   return (
@@ -140,8 +145,8 @@ export default function DownloadButton({
         className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-transform transform shadow-lg sm:gap-3 sm:px-8 sm:py-4 bg-gradient-to-r from-primary-400 to-accent-medium rounded-xl sm:rounded-2xl hover:scale-105 hover:shadow-xl hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-primary-400/50 sm:text-base"
       >
         <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-        <span className="hidden sm:inline">CSV Export</span>
-        <span className="sm:hidden">Export</span>
+        <span className="hidden sm:inline">{t.download.button.full}</span>
+        <span className="sm:hidden">{t.download.button.short}</span>
       </button>
 
       {isOpen && (
@@ -163,10 +168,10 @@ export default function DownloadButton({
                   </div>
                   <div>
                     <h2 className="text-base font-bold sm:text-xl text-text-primary dark:text-text-light">
-                      CSV Export
+                      {t.download.modal.title}
                     </h2>
                     <p className="text-xs text-primary-600 dark:text-primary-300">
-                      Wähle Daten und Zeitraum für den Export
+                      {t.download.modal.subtitle}
                     </p>
                   </div>
                 </div>
@@ -182,7 +187,7 @@ export default function DownloadButton({
               <div className="mb-4 sm:mb-6">
                 <h3 className="flex items-center gap-2 mb-2 text-sm font-semibold sm:text-base text-text-primary dark:text-text-light sm:mb-3">
                   <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Datentypen auswählen
+                  {t.download.modal.dataTypes}
                 </h3>
                 <div className="grid grid-cols-1 gap-1 sm:gap-2">
                   {/* Render options dynamically */}
@@ -218,7 +223,7 @@ export default function DownloadButton({
               <div className="mb-4 sm:mb-6">
                 <h3 className="flex items-center gap-2 mb-2 text-sm font-semibold sm:text-base text-text-primary dark:text-text-light sm:mb-3">
                   <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Zeitraum auswählen
+                  {t.download.modal.timeSpan}
                 </h3>
                 <div className="grid grid-cols-2 gap-1 mb-2 sm:grid-cols-3 sm:gap-2 sm:mb-3">
                   {timeSpanOptions.slice(0, -1).map((option) => (
@@ -246,13 +251,13 @@ export default function DownloadButton({
                         : "bg-background-light/70 dark:bg-primary-600/60 text-text-primary dark:text-text-light border-primary-50/30 dark:border-primary-200/50 hover:bg-background-light/90 dark:hover:bg-primary-500/70"
                     }`}
                   >
-                    Benutzerdefiniert
+                    {t.download.modal.custom}
                   </button>
                   {selectedTimeSpan === "custom" && (
                     <div className="flex flex-col items-start w-full gap-1 text-xs sm:flex-row sm:items-center text-primary-600 dark:text-primary-300">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span>Von:</span>
+                        <span>{t.download.modal.from}</span>
                       </div>
                       <input
                         type="datetime-local"
@@ -265,7 +270,7 @@ export default function DownloadButton({
                         }
                         className="px-2 py-1 text-xs border rounded-lg border-primary-50/30 dark:border-primary-200/50 bg-background-light/70 dark:bg-primary-600/60 text-text-primary dark:text-text-light"
                       />
-                      <span>bis</span>
+                      <span>{t.download.modal.to}</span>
                       <input
                         type="datetime-local"
                         value={customDateRange.end}
@@ -285,14 +290,14 @@ export default function DownloadButton({
               {/* Summary */}
               <div className="p-2 mb-3 rounded-lg bg-primary-50/50 dark:bg-primary-500/20 sm:p-3 sm:mb-4">
                 <h4 className="mb-1 text-xs font-semibold sm:text-sm text-text-primary dark:text-text-light">
-                  Export-Zusammenfassung
+                  {t.download.modal.exportSummary}
                 </h4>
                 <div className="space-y-1 text-xs text-primary-600 dark:text-primary-300">
                   <div>
-                    <strong>Daten:</strong> {getSelectedDataTypesLabel()}
+                    <strong>{t.download.modal.data}:</strong> {getSelectedDataTypesLabel()}
                   </div>
                   <div>
-                    <strong>Zeitraum:</strong>{" "}
+                    <strong>{t.download.modal.timeRange}:</strong>{" "}
                     {
                       timeSpanOptions.find(
                         (opt) => opt.value === selectedTimeSpan
@@ -303,9 +308,9 @@ export default function DownloadButton({
                     customDateRange.start &&
                     customDateRange.end && (
                       <div>
-                        <strong>Benutzerdefiniert:</strong>{" "}
-                        {new Date(customDateRange.start).toLocaleString()} bis{" "}
-                        {new Date(customDateRange.end).toLocaleString()}
+                        <strong>{t.download.modal.custom}:</strong>{" "}
+                        {new Date(customDateRange.start).toLocaleString(language === "de" ? "de-DE" : "en-US")} {t.download.modal.to}{" "}
+                        {new Date(customDateRange.end).toLocaleString(language === "de" ? "de-DE" : "en-US")}
                       </div>
                     )}
                 </div>
@@ -318,7 +323,7 @@ export default function DownloadButton({
                   disabled={isSubmitting}
                   className="flex-1 px-3 py-2 text-xs font-medium transition-colors border rounded-lg sm:px-4 sm:py-2 text-primary-600 dark:text-primary-300 border-primary-200/50 dark:border-primary-300/50 hover:bg-primary-50/50 dark:hover:bg-primary-500/20 sm:text-sm disabled:opacity-50"
                 >
-                  Abbrechen
+                  {t.download.modal.cancel}
                 </button>
                 <button
                   onClick={handleDownload}
@@ -333,10 +338,10 @@ export default function DownloadButton({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Wird vorbereitet...
+                      {t.download.modal.preparing}
                     </>
                   ) : (
-                    "Download starten"
+                    t.download.modal.startDownload
                   )}
                 </button>
               </div>
