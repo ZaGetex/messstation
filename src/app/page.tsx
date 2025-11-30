@@ -197,7 +197,7 @@ export default function Home() {
       </section>
 
       {/*Verweis auf das übergeordnete Projekt */}
-      <p className="px-4 mt-3 text-xs text-center sm:text-sm text-primary-600/80 dark:text-primary-50/80">
+      <p className="px-4 mt-3 text-xs text-center sm:text-sm text-primary-600/80 dark:text-primary-50/80 sm:mb-0 mb-3">
         {t.home.projectText}{" "}
         <a
           href="https://libertalia-kollektiv.eu/"
