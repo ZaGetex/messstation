@@ -17,9 +17,7 @@ export default function LanguageToggle() {
       aria-label={`Switch to ${language === "de" ? "English" : "Deutsch"}`}
       title={language === "de" ? "Switch to English" : "Auf Deutsch wechseln"}
     >
-      {/* Container sized exactly like the Lucide icons (w-5 h-5) in ThemeToggle.
-        This ensures the outer button dimensions are identical.
-      */}
+      
       <div className="relative w-5 h-5 rounded-full overflow-hidden">
         <img
           src={language === "de" 

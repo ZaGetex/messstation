@@ -6,6 +6,9 @@ import {
     Gauge,
     MapPin,
     Wind,
+    Waves,
+    Activity,
+    Cloud,
     LucideIcon,
   } from "lucide-react";
   
@@ -115,9 +118,62 @@ import {
       chartColor: "#9b59b6", // Purple (not used)
     },
     // --- ADD NEW SENSORS HERE ---
-    // When adding a new sensor, make sure to include both German (title, description) 
-    // and English (titleEn, descriptionEn) translations:
-    /*
+    // Multi-Sensor Card Example
+    {
+      sensorId: "water_temperature",
+      title: "Wassertemperatur",
+      titleEn: "Water Temperature",
+      unit: "°C",
+      icon: Waves,
+      formatting: (value) => value.toFixed(1),
+      iconColor: "text-blue-500",
+      shadowColor: "shadow-blue-500/20",
+      borderColor: "hover:border-blue-500/50",
+      hoverTextColor: "group-hover:text-blue-500",
+      showInHistory: true,
+      showInDownload: true,
+      description: "Wassertemperatur in °C",
+      descriptionEn: "Water temperature in °C",
+      chartColor: "#3498db", // Blue
+      chartYAxis: "y",
+    },
+    {
+      sensorId: "ph",
+      title: "pH-Wert",
+      titleEn: "pH Scale",
+      unit: "",
+      icon: Activity,
+      formatting: (value) => value.toFixed(2),
+      iconColor: "text-purple-500",
+      shadowColor: "shadow-purple-500/20",
+      borderColor: "hover:border-purple-500/50",
+      hoverTextColor: "group-hover:text-purple-500",
+      showInHistory: true,
+      showInDownload: true,
+      description: "pH-Wert",
+      descriptionEn: "pH scale value",
+      chartColor: "#9b59b6", // Purple
+      chartYAxis: "y",
+    },
+    {
+      sensorId: "co2",
+      title: "CO₂",
+      titleEn: "CO₂",
+      unit: "ppm",
+      icon: Cloud,
+      formatting: (value) => value.toFixed(0),
+      iconColor: "text-green-600",
+      shadowColor: "shadow-green-600/20",
+      borderColor: "hover:border-green-600/50",
+      hoverTextColor: "group-hover:text-green-600",
+      showInHistory: true,
+      showInDownload: true,
+      description: "CO₂-Wert in ppm",
+      descriptionEn: "CO₂ value in ppm",
+      chartColor: "#27ae60", // Green
+      chartYAxis: "y2",
+    },
+    /* Example Wind Speed Sensor 
     {
       sensorId: "wind_speed",
       title: "Windstärke",
