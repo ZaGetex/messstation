@@ -81,17 +81,18 @@ export const sensorConfig: SensorConfig[] = [
   {
     sensorId: "wind_speed",
     title: "Windstärke",
+    titleEn: "Wind Speed",
     unit: "km/h",
     icon: Wind,
     formatting: (value) => value.toFixed(1),
     iconColor: "text-gray-500",
-    bgColor: "bg-gray-500/10",
     shadowColor: "shadow-gray-500/20",
     borderColor: "hover:border-gray-500/50",
     hoverTextColor: "group-hover:text-gray-600",
     showInHistory: true,
     showInDownload: true,
     description: "Winddaten in km/h",
+    descriptionEn: "Wind data in km/h",
     chartColor: "#f39c12", // Orange
     chartYAxis: "y",
   },
@@ -104,15 +105,17 @@ export const sensorConfig: SensorConfig[] = [
 ### Configuration Options Explained:
 
 - **`sensorId`**: The exact name of the sensor you send in the JSON (e.g., `"wind_speed"`).
-- **`title`**: The display name for the card (e.g., "Windstärke").
+- **`title`**: The German display name for the card (e.g., "Windstärke").
+- **`titleEn`**: The English display name for the card (e.g., "Wind Speed").
 - **`unit`**: The fallback unit if the database doesn't provide one. Also used for labels.
 - **`icon`**: The icon component you imported (`Wind`).
 - **`formatting`**: A function to format the numeric value (e.g., `value.toFixed(1)`).
-- **`iconColor`, `bgColor`, etc.**: Tailwind CSS classes for styling the card.
+- **`iconColor`, `shadowColor`, `borderColor`, `hoverTextColor`**: Tailwind CSS classes for styling the card.
 - **`showInHistory`**: **(Set to `true`)** Automatically adds the sensor to the `/history` page chart.
 - **`showInDownload`**: **(Set to `true`)** Automatically adds the sensor as an option in the CSV download modal.
-- **`description`**: Text shown in the download modal.
-- **`chartColor`**: The line color for the history chart.
+- **`description`**: German text shown in the download modal.
+- **`descriptionEn`**: English text shown in the download modal.
+- **`chartColor`**: The hex color for the chart line (e.g., `"#f39c12"`).
 - **`chartYAxis`**: Which axis to use on the chart (`y` = left, `y2` = right).
 
 ---

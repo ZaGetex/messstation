@@ -182,3 +182,5 @@ The `MultiSensorCard` component (`src/components/MultiSensorCard.tsx`) accepts:
 
 If you want to create multiple multi-sensor cards for different stations, you can extend the component to support multiple groups. However, the current implementation supports one multi-sensor card. To add more, you would need to modify `page.tsx` to create multiple `MultiSensorCard` components with different sensor groups.
 
+
+

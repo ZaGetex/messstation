@@ -184,6 +184,140 @@ curl "http://localhost:3000/api/sensor-data?sensor=humidity"
 curl "http://localhost:3000/api/sensor-data?cluster=weather"
 ```
 
+### GET `/api/latest`
+
+Retrieves the latest reading for each sensor configured in `sensorConfig.ts`. This endpoint is used by the homepage dashboard to display current sensor values.
+
+**Response (200 OK):**
+
+```json
+{
+  "temperature": {
+    "value": 22.4,
+    "unit": "°C",
+    "ts": "2025-10-10T12:00:00Z"
+  },
+  "humidity": {
+    "value": 65.0,
+    "unit": "%",
+    "ts": "2025-10-10T12:00:00Z"
+  },
+  "location": {
+    "value": "Berlin, DE",
+    "ts": "2025-10-10T12:00:00Z"
+  }
+}
+```
+
+**Example:**
+
+```bash
+curl http://localhost:3000/api/latest
+```
+
+### GET `/api/history-chart`
+
+Retrieves sensor data for the history chart page. Returns data within a specified time range.
+
+**Query Parameters:**
+
+- `range` - Time range: "1h", "5h", "1d", or "1w" (default: "1h")
+
+**Response (200 OK):**
+
+```json
+{
+  "data": [
+    {
+      "ts": "2025-10-10T12:00:00Z",
+      "sensor": "temperature",
+      "value": 22.4,
+      "unit": "°C"
+    }
+  ]
+}
+```
+
+**Examples:**
+
+```bash
+# Get last hour of data
+curl "http://localhost:3000/api/history-chart?range=1h"
+
+# Get last day of data
+curl "http://localhost:3000/api/history-chart?range=1d"
+```
+
+### GET `/api/export-csv`
+
+Exports sensor data as a CSV file with optional filtering by sensor type and time range.
+
+**Query Parameters:**
+
+- `dataTypes` - Comma-separated list of sensor IDs (e.g., "temperature,humidity") or "all" for all sensors
+- `timeSpan` - Time range: "1h", "2h", "6h", "12h", "1d", "1w", or "custom"
+- `startDate` - Start date (ISO format, required if timeSpan is "custom")
+- `endDate` - End date (ISO format, required if timeSpan is "custom")
+
+**Response (200 OK):**
+
+Returns a CSV file with headers: `id,ts,cluster,sensor,value,unit`
+
+**Examples:**
+
+```bash
+# Export all temperature data from last 24 hours
+curl "http://localhost:3000/api/export-csv?dataTypes=temperature&timeSpan=1d" -o export.csv
+
+# Export multiple sensors from last week
+curl "http://localhost:3000/api/export-csv?dataTypes=temperature,humidity,air_pressure&timeSpan=1w" -o export.csv
+
+# Export custom date range
+curl "http://localhost:3000/api/export-csv?dataTypes=all&timeSpan=custom&startDate=2025-10-01T00:00:00Z&endDate=2025-10-10T23:59:59Z" -o export.csv
+```
+
+## Features
+
+### Dashboard
+
+The homepage displays real-time sensor data in card format. Each sensor card shows:
+- Current value with unit
+- Last update timestamp with status indicator (green = <1min, orange = <5min, red = older)
+- Auto-refreshes every 30 seconds
+
+### History Page
+
+Access the history page at `/history` to view historical sensor data in an interactive chart. Features:
+- Time range selection (1 hour, 5 hours, 1 day, 1 week)
+- Multiple sensor lines with trendlines
+- Dual Y-axis support for sensors with different scales
+- Responsive design for mobile and desktop
+
+### CSV Export
+
+The download button on the homepage and history page allows exporting sensor data as CSV:
+- Filter by sensor type(s)
+- Select time range (1h, 2h, 6h, 12h, 1d, 1w, or custom date range)
+- Download filtered data for analysis
+
+### Multi-Language Support
+
+The application supports German (DE) and English (EN) languages:
+- Language toggle in the header
+- All UI text is translated
+- Sensor titles and descriptions support both languages
+
+### Theme Support
+
+Dark and light themes are available:
+- Theme toggle in the header
+- Theme preference is persisted
+- Smooth transitions between themes
+
+### Multi-Sensor Cards
+
+Group related sensors into a single larger card. See `MULTI-SENSOR-CARD_README.md` for configuration details.
+
 ## Using Prisma Client
 
 Import and use the Prisma client in your code:
@@ -213,6 +347,11 @@ const newData = await prisma.sensorData.create({
 // Count records
 const count = await prisma.sensorData.count();
 ```
+
+## Additional Documentation
+
+- **[ADD-SENSOR_README.md](./ADD-SENSOR_README.md)** - Guide for adding new sensors to the dashboard
+- **[MULTI-SENSOR-CARD_README.md](./MULTI-SENSOR-CARD_README.md)** - Guide for configuring multi-sensor cards
 
 ## Learn More
 
