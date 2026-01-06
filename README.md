@@ -47,6 +47,68 @@ This is a [Next.js](https://nextjs.org) project for displaying and managing sens
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Project Structure
+
+```
+src/
+├── app/                          # Next.js App Router 
+│   ├── api/
+│   │   └── sensors/              # API Routes gruppiert nach Domain
+│   │       ├── latest/
+│   │       ├── history/
+│   │       ├── data/
+│   │       └── export/
+│   ├── history/
+│   ├── layout.tsx
+│   └── page.tsx
+│
+├── components/                   # Komponenten nach Feature gruppiert
+│   ├── layout/                   # Layout-Komponenten
+│   │   ├── Header.tsx
+│   │   ├── Logo.tsx
+│   │   └── DateTime.tsx
+│   ├── sensors/                  # Sensor-spezifische Komponenten
+│   │   ├── SensorCard.tsx        
+│   │   └── MultiSensorCard.tsx
+│   ├── charts/                   # Chart-Komponenten
+│   │   └── HistoryChart.tsx      
+│   ├── map/                      # Map-Komponenten
+│   │   └── LocationMap.tsx
+│   ├── export/                   # Export-Komponenten
+│   │   └── DownloadButton.tsx
+│   └── ui/                       # Wiederverwendbare UI-Komponenten
+│       ├── ThemeToggle.tsx
+│       └── LanguageToggle.tsx
+│
+├── hooks/                        # Custom React Hooks
+│   ├── useSensorData.ts          # Sensor-Daten Fetching
+│   ├── useTimeStatus.ts          # Zeit-Status Berechnung
+│   └── useChartData.ts           # Chart-Daten Verarbeitung
+│
+├── lib/                          # Utilities & Configuration
+│   ├── config/                   # Konfigurationsdateien
+│   │   ├── sensors.ts            # (vorher sensorConfig.ts)
+│   │   └── translations.ts
+│   ├── db/                       # Database Utilities
+│   │   └── prisma.ts
+│   ├── utils/                    # Helper-Funktionen
+│   │   ├── time.ts               # Zeit-bezogene Utilities
+│   │   ├── csv.ts                # CSV-Utilities
+│   │   ├── chart.ts              # Chart-Utilities
+│   │   └── formatting.ts         # Formatierungs-Utilities
+│   └── constants/                # Konstanten
+│       └── timeRanges.ts         # Zeitbereichs-Konstanten
+│
+├── types/                        # TypeScript Type Definitions
+│   ├── sensor.ts                 # Sensor-bezogene Types
+│   ├── api.ts                    # API Response Types
+│   └── chart.ts                  # Chart-bezogene Types
+│
+└── contexts/                     # React Contexts
+    ├── LanguageContext.tsx
+    └── ThemeContext.tsx
+```
+
 ## Database Management
 
 ### View Your Data
