@@ -53,7 +53,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 src/
 ├── app/                          # Next.js App Router 
 │   ├── api/
-│   │   └── sensors/              # API Routes gruppiert nach Domain
+│   │   └── sensors/              # API routes grouped by domain
 │   │       ├── latest/
 │   │       ├── history/
 │   │       ├── data/
@@ -62,49 +62,49 @@ src/
 │   ├── layout.tsx
 │   └── page.tsx
 │
-├── components/                   # Komponenten nach Feature gruppiert
-│   ├── layout/                   # Layout-Komponenten
+├── components/                   # Components grouped by feature
+│   ├── layout/                   # Layout components
 │   │   ├── Header.tsx
 │   │   ├── Logo.tsx
 │   │   └── DateTime.tsx
-│   ├── sensors/                  # Sensor-spezifische Komponenten
+│   ├── sensors/                  # Sensor-specific components
 │   │   ├── SensorCard.tsx        
 │   │   └── MultiSensorCard.tsx
-│   ├── charts/                   # Chart-Komponenten
+│   ├── charts/                   # Chart components
 │   │   └── HistoryChart.tsx      
-│   ├── map/                      # Map-Komponenten
+│   ├── map/                      # Map components
 │   │   └── LocationMap.tsx
-│   ├── export/                   # Export-Komponenten
+│   ├── export/                   # Export components
 │   │   └── DownloadButton.tsx
-│   └── ui/                       # Wiederverwendbare UI-Komponenten
+│   └── ui/                       # Reusable UI components
 │       ├── ThemeToggle.tsx
 │       └── LanguageToggle.tsx
 │
-├── hooks/                        # Custom React Hooks
-│   ├── useSensorData.ts          # Sensor-Daten Fetching
-│   ├── useTimeStatus.ts          # Zeit-Status Berechnung
-│   └── useChartData.ts           # Chart-Daten Verarbeitung
+├── hooks/                        # Custom React hooks
+│   ├── useSensorData.ts          # Sensor data fetching
+│   ├── useTimeStatus.ts          # Time status calculation
+│   └── useChartData.ts           # Chart data processing
 │
-├── lib/                          # Utilities & Configuration
-│   ├── config/                   # Konfigurationsdateien
-│   │   ├── sensors.ts            # (vorher sensorConfig.ts)
+├── lib/                          # Utilities & configuration
+│   ├── config/                   # Configuration files
+│   │   ├── sensors.ts            # (formerly sensorConfig.ts)
 │   │   └── translations.ts
-│   ├── db/                       # Database Utilities
+│   ├── db/                       # Database utilities
 │   │   └── prisma.ts
-│   ├── utils/                    # Helper-Funktionen
-│   │   ├── time.ts               # Zeit-bezogene Utilities
+│   ├── utils/                    # Helper functions
+│   │   ├── time.ts               # Time-related utilities
 │   │   ├── csv.ts                # CSV-Utilities
-│   │   ├── chart.ts              # Chart-Utilities
-│   │   └── formatting.ts         # Formatierungs-Utilities
-│   └── constants/                # Konstanten
-│       └── timeRanges.ts         # Zeitbereichs-Konstanten
+│   │   ├── chart.ts              # Chart utilities
+│   │   └── formatting.ts         # Formatting utilities
+│   └── constants/                # Constants
+│       └── timeRanges.ts         # Time range constants
 │
-├── types/                        # TypeScript Type Definitions
-│   ├── sensor.ts                 # Sensor-bezogene Types
+├── types/                        # TypeScript type definitions
+│   ├── sensor.ts                 # Sensor-related types
 │   ├── api.ts                    # API Response Types
-│   └── chart.ts                  # Chart-bezogene Types
+│   └── chart.ts                  # Chart-related types
 │
-└── contexts/                     # React Contexts
+└── contexts/                     # React contexts
     ├── LanguageContext.tsx
     └── ThemeContext.tsx
 ```
