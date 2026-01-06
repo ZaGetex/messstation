@@ -1,11 +1,14 @@
-// src/components/LocationMap.tsx
+/**
+ * Location map component using Leaflet
+ * Displays a map with the sensor location based on a query string
+ */
 
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { useMap } from "react-leaflet"; // NEW IMPORT
-import { LocateFixed } from "lucide-react"; // NEW IMPORT
+import { useMap } from "react-leaflet";
+import { LocateFixed } from "lucide-react";
 
 type LatLng = {
   lat: number;
@@ -18,7 +21,7 @@ type LocationMapProps = {
   zoom?: number;
 };
 
-// Dynamische Imports, um SSR-Probleme mit Leaflet zu vermeiden
+// Dynamic imports to avoid SSR issues with Leaflet
 const MapContainer = dynamic(
   () => import("react-leaflet").then((m) => m.MapContainer),
   { ssr: false }
@@ -38,15 +41,17 @@ const ZoomControl = dynamic(
   { ssr: false }
 );
 
-// This component must be a child of <MapContainer> to use the useMap hook
+/**
+ * Homing button component that centers the map on the original location
+ * Must be a child of <MapContainer> to use the useMap hook
+ */
 function HomingButton({ center, zoom }: { center: LatLng; zoom: number }) {
   const map = useMap();
 
   const onClick = () => {
-    map.flyTo(center, zoom); // Fly back to the original center and zoom
+    map.flyTo(center, zoom);
   };
 
-  // These classes are styled to mimic the zoom control
   return (
     <button
       onClick={onClick}
@@ -69,11 +74,12 @@ function HomingButton({ center, zoom }: { center: LatLng; zoom: number }) {
   );
 }
 
-// Modern custom marker creation
+/**
+ * Creates a modern SVG marker icon for the map
+ */
 const createModernMarker = async () => {
   const L = (await import("leaflet")).default;
 
-  // Create a modern SVG marker
   const createSVGIcon = (color: string = "#123a98") => {
     const svgIcon = `
       <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
@@ -123,12 +129,12 @@ export default function LocationMap({
           setCustomIcon(icon);
         }
 
+        // Geocode the query string using Nominatim
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
           query
         )}&limit=1`;
         const res = await fetch(url, {
           headers: {
-            // Nominatim wünscht eine Kennzeichnung der Anwendung
             "User-Agent": "messstation-web/0.1 (nextjs)",
           },
         });
@@ -177,7 +183,7 @@ export default function LocationMap({
         style={mapStyle}
       >
         <div className="w-full h-full flex items-center justify-center relative">
-          {/* Modern loading animation */}
+          {/* Loading animation */}
           <div className="flex flex-col items-center gap-3">
             <div className="relative">
               <div className="w-8 h-8 border-3 border-primary-200 dark:border-primary-300 border-t-primary-400 dark:border-t-primary-100 rounded-full animate-spin"></div>
@@ -201,10 +207,9 @@ export default function LocationMap({
 
   return (
     <div
-      className="w-full overflow-hidden rounded-2xl border border-primary-50/30 dark:border-primary-200/50 shadow-lg bg-white/80 dark:bg-primary-800/80 backdrop-blur-sm relative" // <-- ADDED 'relative'
+      className="w-full overflow-hidden rounded-2xl border border-primary-50/30 dark:border-primary-200/50 shadow-lg bg-white/80 dark:bg-primary-800/80 backdrop-blur-sm relative"
       style={mapStyle}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <MapContainer
         center={[center.lat, center.lng]}
         zoom={zoom}
@@ -236,3 +241,4 @@ export default function LocationMap({
     </div>
   );
 }
+

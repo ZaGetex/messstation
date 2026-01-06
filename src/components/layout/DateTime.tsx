@@ -1,3 +1,8 @@
+/**
+ * DateTime component for displaying current date and time
+ * Updates every second and respects language settings
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,13 +16,15 @@ export default function DateTime() {
   useEffect(() => {
     setIsMounted(true);
 
+    // Update time every second
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000); // Update every second
+    }, 1000);
 
     return () => clearInterval(timer);
   }, []);
 
+  // Prevent hydration mismatch
   if (!isMounted) {
     return null;
   }
@@ -37,3 +44,4 @@ export default function DateTime() {
     </div>
   );
 }
+

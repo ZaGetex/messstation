@@ -1,3 +1,7 @@
+/**
+ * Logo component for displaying HAW and Barkasse logos
+ */
+
 "use client";
 
 import Image from "next/image";
@@ -11,8 +15,11 @@ interface LogoProps {
   className?: string;
 }
 
+/**
+ * Main HAW logo component with fallback
+ */
 export default function Logo({
-  src = "/HAW-Logo.png", // Standard Logo-Pfad
+  src = "/HAW-Logo.png",
   alt = "HAW Logo",
   width = 60,
   height = 60,
@@ -20,7 +27,7 @@ export default function Logo({
 }: LogoProps) {
   const [imageError, setImageError] = useState(false);
 
-  // Fallback-Logo wenn das Bild nicht geladen werden kann
+  // Fallback logo when image cannot be loaded
   const fallbackLogo = (
     <div
       className={`flex items-center justify-center bg-gradient-to-br from-primary-400 to-accent-medium text-white font-bold rounded-lg ${className}`}
@@ -44,12 +51,15 @@ export default function Logo({
         className="object-contain rounded-lg"
         onError={() => setImageError(true)}
         priority
-        unoptimized={true} // Force unoptimized for PNG files too
+        unoptimized={true}
       />
     </div>
   );
 }
 
+/**
+ * Secondary Barkasse logo component with fallback
+ */
 export function Logo2({
   src = "/Barkasse-Logo-alt.png",
   alt = "Barkasse Logo",
@@ -59,7 +69,7 @@ export function Logo2({
 }: LogoProps) {
   const [imageError, setImageError] = useState(false);
 
-  // Fallback-Logo wenn das Bild nicht geladen werden kann
+  // Fallback logo when image cannot be loaded
   const fallbackLogo = (
     <div
       className={`flex items-center justify-center bg-gradient-to-br from-accent-dark to-primary-300 text-white font-bold rounded-lg ${className}`}
@@ -83,8 +93,9 @@ export function Logo2({
         className="object-contain rounded-lg"
         onError={() => setImageError(true)}
         priority
-        unoptimized={true} // Force unoptimized for PNG files too
+        unoptimized={true}
       />
     </div>
   );
 }
+

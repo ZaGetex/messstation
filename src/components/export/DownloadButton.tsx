@@ -1,27 +1,27 @@
-// src/components/DownloadButton.tsx
+/**
+ * Download button component with modal for CSV export
+ * Allows users to select data types and time ranges for export
+ */
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Download, Calendar, FileText, Clock, X, Loader2 } from "lucide-react";
-import { sensorConfig } from "@/lib/sensorConfig"; // Import the new config
+import { sensorConfig } from "@/lib/config/sensors";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTranslations } from "@/lib/translations";
+import { useTranslations } from "@/lib/config/translations";
+import { TimeSpan, DataType } from "@/types/api";
 
 interface DownloadButtonProps {
   className?: string;
 }
-
-type TimeSpan = "1h" | "2h" | "6h" | "12h" | "1d" | "1w" | "custom";
-// The 'DataType' is now any sensorId string, or 'all'
-type DataType = string;
 
 export default function DownloadButton({
   className = "",
 }: DownloadButtonProps) {
   const { language } = useLanguage();
   const t = useTranslations(language);
-  
+
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDataTypes, setSelectedDataTypes] = useState<DataType[]>([
@@ -43,8 +43,7 @@ export default function DownloadButton({
     { value: "custom", label: t.download.timeSpans.custom },
   ];
 
-  // --- DYNAMIC DATA TYPE OPTIONS ---
-  // Build the options dynamically from the sensor config
+  // Build data type options dynamically from sensor config
   const dataTypeOptions: {
     value: DataType;
     label: string;
@@ -56,7 +55,8 @@ export default function DownloadButton({
       .map((sensor) => ({
         value: sensor.sensorId,
         label: t.sensors[sensor.sensorId]?.title || sensor.title,
-        description: t.sensors[sensor.sensorId]?.description || sensor.description,
+        description:
+          t.sensors[sensor.sensorId]?.description || sensor.description,
       })),
     // Add the "all" option at the end
     {
@@ -65,9 +65,9 @@ export default function DownloadButton({
       description: t.download.dataTypes.allDescription,
     },
   ];
-  // --- END DYNAMIC DATA TYPE OPTIONS ---
 
-  React.useEffect(() => {
+  // Prevent body scroll when modal is open
+  useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -113,7 +113,7 @@ export default function DownloadButton({
         }
       }
 
-      const url = `/api/export-csv?${params.toString()}`;
+      const url = `/api/sensors/export?${params.toString()}`;
       window.open(url, "_blank");
 
       setTimeout(() => {
@@ -130,7 +130,8 @@ export default function DownloadButton({
 
   const getSelectedDataTypesLabel = () => {
     if (selectedDataTypes.includes("all")) return t.download.dataTypes.all;
-    if (selectedDataTypes.length === 0) return t.download.dataTypes.noSelection;
+    if (selectedDataTypes.length === 0)
+      return t.download.dataTypes.noSelection;
     if (selectedDataTypes.length === 1) {
       return dataTypeOptions.find((opt) => opt.value === selectedDataTypes[0])
         ?.label;
@@ -190,7 +191,6 @@ export default function DownloadButton({
                   {t.download.modal.dataTypes}
                 </h3>
                 <div className="grid grid-cols-1 gap-1 sm:gap-2">
-                  {/* Render options dynamically */}
                   {dataTypeOptions.map((option) => (
                     <label
                       key={option.value}
@@ -294,7 +294,8 @@ export default function DownloadButton({
                 </h4>
                 <div className="space-y-1 text-xs text-primary-600 dark:text-primary-300">
                   <div>
-                    <strong>{t.download.modal.data}:</strong> {getSelectedDataTypesLabel()}
+                    <strong>{t.download.modal.data}:</strong>{" "}
+                    {getSelectedDataTypesLabel()}
                   </div>
                   <div>
                     <strong>{t.download.modal.timeRange}:</strong>{" "}
@@ -309,8 +310,13 @@ export default function DownloadButton({
                     customDateRange.end && (
                       <div>
                         <strong>{t.download.modal.custom}:</strong>{" "}
-                        {new Date(customDateRange.start).toLocaleString(language === "de" ? "de-DE" : "en-US")} {t.download.modal.to}{" "}
-                        {new Date(customDateRange.end).toLocaleString(language === "de" ? "de-DE" : "en-US")}
+                        {new Date(customDateRange.start).toLocaleString(
+                          language === "de" ? "de-DE" : "en-US"
+                        )}{" "}
+                        {t.download.modal.to}{" "}
+                        {new Date(customDateRange.end).toLocaleString(
+                          language === "de" ? "de-DE" : "en-US"
+                        )}
                       </div>
                     )}
                 </div>
@@ -352,3 +358,4 @@ export default function DownloadButton({
     </div>
   );
 }
+

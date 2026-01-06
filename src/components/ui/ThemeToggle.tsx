@@ -1,7 +1,12 @@
+/**
+ * Theme toggle button component
+ * Allows users to switch between light and dark themes
+ */
+
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -20,3 +25,4 @@ export default function ThemeToggle() {
     </button>
   );
 }
+

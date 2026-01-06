@@ -1,168 +1,53 @@
-// src/app/page.tsx
+/**
+ * Home page component
+ * Displays the main dashboard with sensor cards and location map
+ */
 
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import DownloadButton from "../components/DownloadButton";
-import MultiSensorCard from "../components/MultiSensorCard";
-import { sensorConfig, sensorConfigMap } from "@/lib/sensorConfig"; // Import the new config
+import DownloadButton from "@/components/export/DownloadButton";
+import SensorCard from "@/components/sensors/SensorCard";
+import { sensorConfig } from "@/lib/config/sensors";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTranslations } from "@/lib/translations";
+import { useTranslations } from "@/lib/config/translations";
+import { useSensorData } from "@/hooks/useSensorData";
+import { getTimeStatus } from "@/lib/utils/time";
+import { SensorCardData } from "@/types/sensor";
 
-// Utility function to get time difference and status
-const getTimeStatus = (
-  timestamp: Date,
-  t: ReturnType<typeof useTranslations>
-) => {
-  const now = new Date();
-  const diffInMinutes = Math.floor(
-    (now.getTime() - timestamp.getTime()) / (1000 * 60)
-  );
-
-  if (diffInMinutes <= 1) {
-    return { color: "bg-green-500", text: t.timeStatus.now };
-  } else if (diffInMinutes <= 5) {
-    return {
-      color: "bg-orange-500",
-      text: `${diffInMinutes} ${t.timeStatus.minutesAgo}`,
-    };
-  } else if (diffInMinutes <= 60) {
-    return {
-      color: "bg-red-500",
-      text: `${diffInMinutes} ${t.timeStatus.minutesAgo}`,
-    };
-  } else {
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    return {
-      color: "bg-red-600",
-      text: `${diffInHours}${t.timeStatus.hoursAgo}`,
-    };
-  }
-};
-
-const LocationMap = dynamic(() => import("../components/LocationMap"), {
+// Dynamically import LocationMap to avoid SSR issues
+const LocationMap = dynamic(() => import("@/components/map/LocationMap"), {
   ssr: false,
 });
-
-// Helper type for our dynamic state
-type SensorDataState = {
-  [key: string]: string; // Stores formatted value, e.g., "21.5 °C"
-};
-type SensorLastUpdatedState = {
-  [key: string]: Date; // Stores last update timestamp
-};
 
 export default function Home() {
   const { language } = useLanguage();
   const t = useTranslations(language);
 
-  // --- DYNAMIC STATE ---
-  // Initialize state dynamically based on sensorConfig
-  const [data, setData] = useState<SensorDataState>(() => {
-    const initialState: SensorDataState = {};
-    sensorConfig.forEach((sensor) => {
-      initialState[sensor.sensorId] = "N/A";
-    });
-    return initialState;
-  });
+  // Fetch sensor data using custom hook
+  const { data, lastUpdated } = useSensorData();
 
-  const [lastUpdated, setLastUpdated] = useState<SensorLastUpdatedState>(() => {
-    const initialState: SensorLastUpdatedState = {};
-    sensorConfig.forEach((sensor) => {
-      initialState[sensor.sensorId] = new Date(Date.now());
-    });
-    return initialState;
-  });
-  // --- END DYNAMIC STATE ---
-
-  // Fetch latest sensor data from the API
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/latest");
-        if (!response.ok) throw new Error("Failed to fetch data");
-        const latest = await response.json();
-
-        // --- DYNAMIC STATE UPDATE ---
-        setData((prevData) => {
-          const newData = { ...prevData };
-          for (const sensor of sensorConfig) {
-            const sensorApiData = latest[sensor.sensorId];
-            if (sensorApiData) {
-              if (sensor.sensorId === "location") {
-                // Location is special, value is a string from `sensorApiData.value`
-                newData.location = sensorApiData.value;
-              } else {
-                // All other sensors are numbers
-                newData[sensor.sensorId] = `${sensor.formatting(
-                  sensorApiData.value
-                )} ${sensorApiData.unit || sensor.unit || ""}`.trim();
-              }
-            }
-          }
-          return newData;
-        });
-
-        setLastUpdated((prevLastUpdated) => {
-          const newLastUpdated = { ...prevLastUpdated };
-          for (const sensor of sensorConfig) {
-            const sensorApiData = latest[sensor.sensorId];
-            if (sensorApiData) {
-              newLastUpdated[sensor.sensorId] = new Date(sensorApiData.ts);
-            }
-          }
-          return newLastUpdated;
-        });
-        // --- END DYNAMIC STATE UPDATE ---
-      } catch (error) {
-        console.error("Error fetching sensor data:", error);
-        // Keep previous data on error
-      }
-    };
-
-    fetchData();
-    // Refresh data every 30 seconds
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // --- MULTI-SENSOR CARD CONFIGURATION ---
   // Define which sensors should be grouped in the multi-sensor card
+  // Currently disabled, but can be enabled by uncommenting the MultiSensorCard below
   const multiSensorCardSensors = ["water_temperature", "ph", "co2"];
 
-  // --- DYNAMIC CARD DATA ---
-  // Build the card data array dynamically from the config and state
+  // Build card data array dynamically from config and state
   // Filter out sensors that are in the multi-sensor card
-  const cardData = sensorConfig
+  const cardData: SensorCardData[] = sensorConfig
     .filter((sensor) => !multiSensorCardSensors.includes(sensor.sensorId))
     .map((sensor) => {
       const Icon = sensor.icon;
       const timeStatus = getTimeStatus(lastUpdated[sensor.sensorId], t);
 
       return {
-        ...sensor, // Spread all properties from config (title, colors, etc.)
+        ...sensor, // Spread all properties from config
         value: data[sensor.sensorId],
         lastUpdated: lastUpdated[sensor.sensorId],
-        Icon, // Pass the component itself
-        timeStatus, // Pass the calculated time status
-      };
-    });
-
-  // Build data for the multi-sensor card
-  const multiSensorCardData = sensorConfig
-    .filter((sensor) => multiSensorCardSensors.includes(sensor.sensorId))
-    .map((sensor) => {
-      const timeStatus = getTimeStatus(lastUpdated[sensor.sensorId], t);
-      return {
-        config: sensor,
-        value: data[sensor.sensorId],
-        lastUpdated: lastUpdated[sensor.sensorId],
+        Icon,
         timeStatus,
       };
     });
-  // --- END DYNAMIC CARD DATA ---
 
   return (
     <>
@@ -176,38 +61,11 @@ export default function Home() {
       </header>
 
       <section className="grid w-full grid-cols-1 gap-4 px-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-8 max-w-7xl sm:px-0">
-        {cardData.map((card) => {
-          return (
-            <div
-              key={card.sensorId}
-              className={`group bg-background-light/40 dark:bg-primary-600/40 backdrop-blur-lg border border-primary-50/20 dark:border-primary-200/30 rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex flex-col items-center text-center transform transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl ${card.shadowColor} ${card.borderColor}`}
-            >
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3 sm:mb-4 transition-colors duration-300 bg-background-light/70 dark:bg-primary-600/60">
-                <card.Icon
-                  className={`${card.iconColor} dark:text-primary-50 w-6 h-6 sm:w-8 sm:h-8`}
-                />
-              </div>
-              <h2 className="text-sm font-medium sm:text-base text-primary-600 dark:text-primary-50">
-                {t.sensors[card.sensorId]?.title || card.title}
-              </h2>
-              <p
-                className={`text-2xl sm:text-4xl font-bold text-text-primary dark:text-text-light mt-2 transition-colors duration-300 ${card.hoverTextColor}`}
-              >
-                {card.value}
-              </p>
-
-              {/* Update indicator */}
-              <div className="flex items-center gap-2 mt-2 text-xs sm:mt-3 text-primary-500 dark:text-primary-50">
-                <div
-                  className={`w-2 h-2 rounded-full ${card.timeStatus.color}`}
-                ></div>
-                <span>{card.timeStatus.text}</span>
-              </div>
-            </div>
-          );
-        })}
+        {cardData.map((card) => (
+          <SensorCard key={card.sensorId} card={card} />
+        ))}
         {/* Multi-Sensor Card Example */}
-        {multiSensorCardData.length > 0 && (
+        {/* {multiSensorCardData.length > 0 && (
           <MultiSensorCard
             title={
               language === "de"
@@ -216,16 +74,14 @@ export default function Home() {
             }
             sensors={multiSensorCardData}
           />
-        )}
-
-        {/* Render regular sensor cards by mapping over the dynamic cardData array */}
+        )} */}
       </section>
 
       <section className="w-full px-4 mt-6 max-w-7xl sm:mt-8 sm:px-0">
         <h3 className="mb-3 text-xs font-semibold tracking-wide uppercase sm:text-sm text-primary-600 dark:text-primary-50">
           {t.home.mapTitle}
-        </h3>{" "}
-        {/*TODO: Dynmaische Koordinaten aus der Datenbank*/}
+        </h3>
+        {/* TODO: Dynamic coordinates from database */}
         <LocationMap query={data.location} height={280} />
       </section>
 
@@ -239,7 +95,7 @@ export default function Home() {
         </Link>
       </section>
 
-      {/*Verweis auf das übergeordnete Projekt */}
+      {/* Reference to the parent project */}
       <p className="px-4 mt-3 text-xs text-center sm:text-sm text-primary-600/80 dark:text-primary-50/80 sm:mb-0 mb-3">
         {t.home.projectText}{" "}
         <a

@@ -4,10 +4,10 @@ import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import { LanguageProvider } from "../contexts/LanguageContext";
-import ThemeToggle from "../components/ThemeToggle";
-import LanguageToggle from "../components/LanguageToggle";
-import Logo, { Logo2 } from "@/components/Logo";
-import DateTime from "@/components/DateTime";
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import LanguageToggle from "@/components/ui/LanguageToggle";
+import Logo, { Logo2 } from "@/components/layout/Logo";
+import DateTime from "@/components/layout/DateTime";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

@@ -1,6 +1,9 @@
-// src/lib/translations.ts
+/**
+ * Translation configuration file
+ * Contains all user-facing text in German and English
+ */
 
-import { sensorConfig } from "./sensorConfig";
+import { sensorConfig } from "./sensors";
 
 export type Language = "de" | "en";
 
@@ -10,7 +13,7 @@ export interface Translations {
     title: string;
     description: string;
   };
-  
+
   // Home page
   home: {
     title: string;
@@ -157,7 +160,9 @@ const translations: Record<Language, Translations> = {
       hoursAgo: "Std.",
     },
     sensors: (() => {
-      const sensors: { [key: string]: { title: string; description: string } } = {};
+      const sensors: {
+        [key: string]: { title: string; description: string };
+      } = {};
       sensorConfig.forEach((sensor) => {
         sensors[sensor.sensorId] = {
           title: sensor.title,
@@ -234,7 +239,9 @@ const translations: Record<Language, Translations> = {
       hoursAgo: "h ago",
     },
     sensors: (() => {
-      const sensors: { [key: string]: { title: string; description: string } } = {};
+      const sensors: {
+        [key: string]: { title: string; description: string };
+      } = {};
       sensorConfig.forEach((sensor) => {
         sensors[sensor.sensorId] = {
           title: sensor.titleEn,
@@ -246,10 +253,22 @@ const translations: Record<Language, Translations> = {
   },
 };
 
+/**
+ * Gets translations for a specific language
+ * 
+ * @param language - The language code ("de" or "en")
+ * @returns Translations object for the specified language
+ */
 export function getTranslations(language: Language): Translations {
   return translations[language];
 }
 
+/**
+ * Hook-like function to get translations (for use in components)
+ * 
+ * @param language - The language code ("de" or "en")
+ * @returns Translations object for the specified language
+ */
 export function useTranslations(language: Language) {
   return getTranslations(language);
 }

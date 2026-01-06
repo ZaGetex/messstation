@@ -1,4 +1,7 @@
-// src/app/history/page.tsx
+/**
+ * History page component
+ * Displays sensor data history in a chart format with time range selection
+ */
 
 "use client";
 
@@ -18,11 +21,14 @@ import {
 import { Line } from "react-chartjs-2";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import DownloadButton from "../../components/DownloadButton";
-import { useTheme } from "../../contexts/ThemeContext";
-import { useLanguage } from "../../contexts/LanguageContext";
-import { useTranslations } from "@/lib/translations";
-import { sensorConfig, SensorConfig } from "@/lib/sensorConfig"; // Import the new config
+import DownloadButton from "@/components/export/DownloadButton";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslations } from "@/lib/config/translations";
+import { sensorConfig } from "@/lib/config/sensors";
+import { useChartData } from "@/hooks/useChartData";
+import { hexToRgba } from "@/lib/utils/chart";
+import { RangeKey } from "@/types/api";
 // @ts-ignore - chartjs-plugin-trendline doesn't have TypeScript definitions
 import trendline from "chartjs-plugin-trendline";
 
@@ -38,109 +44,18 @@ ChartJS.register(
   trendline
 );
 
-type RangeKey = "1h" | "5h" | "1d" | "1w";
-
-// Sensor data type from the API
-type SensorData = {
-  ts: string; // ISO date string
-  sensor: string;
-  value: number;
-  unit: string;
-};
-
-// Get the sensors that should be displayed on the chart
-const chartSensors = sensorConfig.filter((s) => s.showInHistory);
-// Check if any sensor needs the y2 axis
-const useY2Axis = chartSensors.some((s) => s.chartYAxis === "y2");
-
-// Ranges will be generated dynamically based on language
-
-/**
- * Dynamically processes the raw sensor data array from the API.
- * @param data Raw array of SensorData objects.
- * @param sensorsToProcess The config array of sensors to include.
- * @returns An object with arrays for labels and a dataset object.
- */
-function processChartData(
-  data: SensorData[],
-  sensorsToProcess: SensorConfig[]
-) {
-  const labels: string[] = [];
-  // Create a map of sensor IDs to look for
-  const sensorIdSet = new Set(sensorsToProcess.map((s) => s.sensorId));
-
-  // Use a Map to group data by timestamp
-  const dataByTimestamp = new Map<string, Record<string, number | null>>();
-  // Use a Set to collect all unique timestamps
-  const allTimestamps = new Set<string>();
-
-  for (const reading of data) {
-    // Only process sensors that are in our chart list
-    if (sensorIdSet.has(reading.sensor)) {
-      const ts = reading.ts;
-      allTimestamps.add(ts);
-
-      if (!dataByTimestamp.has(ts)) {
-        // Initialize an entry for this timestamp
-        const newEntry: Record<string, number | null> = {};
-        for (const id of sensorIdSet) {
-          newEntry[id] = null;
-        }
-        dataByTimestamp.set(ts, newEntry);
-      }
-
-      // Populate the sensor value
-      dataByTimestamp.get(ts)![reading.sensor] = reading.value;
-    }
-  }
-
-  // Sort timestamps chronologically
-  const sortedTimestamps = Array.from(allTimestamps).sort();
-
-  // Initialize the datasets object
-  const datasets: Record<string, (number | null)[]> = {};
-  for (const id of sensorIdSet) {
-    datasets[id] = [];
-  }
-
-  // Build the final arrays
-  for (const ts of sortedTimestamps) {
-    // Format timestamp to "HH:mm"
-    labels.push(
-      new Date(ts).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    );
-
-    const entry = dataByTimestamp.get(ts);
-    for (const id of sensorIdSet) {
-      datasets[id].push(entry ? entry[id] : null);
-    }
-  }
-
-  return { labels, datasets };
-}
-
-// Helper to convert hex to rgba
-function hexToRgba(hex: string, alpha: number) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 export default function HistoryPage() {
   const [range, setRange] = useState<RangeKey>("1h");
   const [isMobile, setIsMobile] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [chartData, setChartData] = useState<{
-    labels: string[];
-    datasets: Record<string, (number | null)[]>;
-  }>({ labels: [], datasets: {} });
   const { theme } = useTheme();
   const { language } = useLanguage();
   const t = useTranslations(language);
+
+  // Fetch and process chart data using custom hook
+  const { chartData, isLoading, chartSensors } = useChartData(range);
+
+  // Check if any sensor needs the y2 axis
+  const useY2Axis = chartSensors.some((s) => s.chartYAxis === "y2");
 
   const ranges: {
     key: RangeKey;
@@ -152,30 +67,6 @@ export default function HistoryPage() {
     { key: "1w", label: t.history.ranges["1w"] },
   ];
 
-  // Fetch data from the API when the 'range' state changes
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`/api/history-chart?range=${range}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch chart data");
-        }
-        const apiResponse: { data: SensorData[] } = await response.json();
-        // Process data only for the sensors we want to chart
-        const processedData = processChartData(apiResponse.data, chartSensors);
-        setChartData(processedData);
-      } catch (error) {
-        console.error(error);
-        setChartData({ labels: [], datasets: {} });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [range]);
-
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
@@ -185,7 +76,6 @@ export default function HistoryPage() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // --- DYNAMIC CHART DATASET ---
   // Build Chart.js datasets dynamically from config and fetched data
   const data = useMemo(
     () => ({
@@ -223,12 +113,10 @@ export default function HistoryPage() {
         ])
         .filter((d) => d.data.length > 0), // Filter out datasets with no data
     }),
-    [chartData] // Re-calculate when chartData changes
+    [chartData, chartSensors, t]
   );
-  // --- END DYNAMIC CHART DATASET ---
 
-  // --- DYNAMIC CHART OPTIONS ---
-  // Dynamically create options, including the y2 axis if needed
+  // Dynamically create chart options, including the y2 axis if needed
   const options = useMemo((): ChartOptions<"line"> => {
     const scales: ChartOptions<"line">["scales"] = {
       x: {
@@ -291,10 +179,9 @@ export default function HistoryPage() {
           bodyFont: { size: isMobile ? 9 : 12 },
         },
       },
-      scales, // Add the dynamically generated scales
+      scales,
     };
-  }, [isMobile, theme]);
-  // --- END DYNAMIC CHART OPTIONS ---
+  }, [isMobile, theme, useY2Axis]);
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen p-1 bg-gradient-to-br from-background-light via-accent-light to-primary-50 dark:from-background-dark dark:via-primary-600 dark:to-primary-700 sm:p-6 md:p-10">

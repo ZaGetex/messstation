@@ -1,12 +1,16 @@
-// src/app/api/latest/route.ts
+/**
+ * API route: GET /api/sensors/latest
+ * Returns the latest sensor data for all configured sensors
+ */
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { sensorConfig } from "@/lib/sensorConfig";
+import { prisma } from "@/lib/db/prisma";
+import { sensorConfig } from "@/lib/config/sensors";
+import { LatestSensorDataResponse } from "@/types/api";
 
 export async function GET() {
   try {
-    // 1. Get all sensor IDs from the config, excluding "location"
+    // Get all sensor IDs from the config, excluding "location"
     const sensorQueries = sensorConfig
       .filter((s) => s.sensorId !== "location")
       .map((sensor) => {
@@ -16,7 +20,7 @@ export async function GET() {
         });
       });
 
-    // 2. Add the special location query
+    // Add the special location query
     const locationQuery = prisma.sensorData.findFirst({
       where: {
         OR: [{ sensor: "location" }, { sensor: "gps" }],
@@ -24,11 +28,11 @@ export async function GET() {
       orderBy: { ts: "desc" },
     });
 
-    // 3. Run all queries in parallel
+    // Run all queries in parallel for better performance
     const results = await Promise.all([...sensorQueries, locationQuery]);
 
-    // 4. Dynamically build the response object
-    const response: { [key: string]: any } = {};
+    // Dynamically build the response object
+    const response: LatestSensorDataResponse = {};
     let i = 0;
     for (const sensor of sensorConfig) {
       if (sensor.sensorId === "location") {
@@ -36,8 +40,8 @@ export async function GET() {
         const locationData = results[results.length - 1];
         response.location = locationData
           ? {
-              value: locationData.unit, // Location stored in unit field (e.g., "Berlin, DE")
-              ts: locationData.ts,
+              value: locationData.unit || "", // Location stored in unit field
+              ts: locationData.ts.toISOString(),
             }
           : null;
       } else {
@@ -47,7 +51,7 @@ export async function GET() {
           ? {
               value: sensorData.value,
               unit: sensorData.unit,
-              ts: sensorData.ts,
+              ts: sensorData.ts.toISOString(),
             }
           : null;
         i++; // Increment index for results array
@@ -63,3 +67,4 @@ export async function GET() {
     );
   }
 }
+

@@ -1,6 +1,11 @@
+/**
+ * Language toggle button component
+ * Allows users to switch between German and English
+ */
+
 "use client";
 
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function LanguageToggle() {
   const { language, toggleLanguage } = useLanguage();
@@ -17,14 +22,15 @@ export default function LanguageToggle() {
       aria-label={`Switch to ${language === "de" ? "English" : "Deutsch"}`}
       title={language === "de" ? "Switch to English" : "Auf Deutsch wechseln"}
     >
-      
       <div className="relative w-5 h-5 rounded-full overflow-hidden">
         <img
-          src={language === "de" 
-            ? "https://flagcdn.com/de.svg" 
-            : "https://flagcdn.com/gb.svg"} 
+          src={
+            language === "de"
+              ? "https://flagcdn.com/de.svg"
+              : "https://flagcdn.com/gb.svg"
+          }
           alt={language === "de" ? "German Flag" : "English Flag"}
-          className="w-full h-full object-cover transform scale-150" 
+          className="w-full h-full object-cover transform scale-150"
         />
         {/* Subtle overlay for dark mode contrast */}
         <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/10" />
@@ -32,3 +38,4 @@ export default function LanguageToggle() {
     </button>
   );
 }
+

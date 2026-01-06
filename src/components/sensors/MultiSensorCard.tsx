@@ -1,17 +1,15 @@
-// src/components/MultiSensorCard.tsx
+/**
+ * Multi-sensor card component
+ * Displays multiple sensors in a single card layout
+ */
 
-import { SensorConfig } from "@/lib/sensorConfig";
+import { MultiSensorCardData } from "@/types/sensor";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTranslations } from "@/lib/translations";
+import { useTranslations } from "@/lib/config/translations";
 
 interface MultiSensorCardProps {
   title: string;
-  sensors: Array<{
-    config: SensorConfig;
-    value: string;
-    lastUpdated: Date;
-    timeStatus: { color: string; text: string };
-  }>;
+  sensors: MultiSensorCardData[];
 }
 
 export default function MultiSensorCard({
@@ -64,3 +62,4 @@ export default function MultiSensorCard({
     </div>
   );
 }
+
