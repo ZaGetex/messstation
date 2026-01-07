@@ -9,12 +9,13 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import DownloadButton from "@/components/export/DownloadButton";
 import SensorCard from "@/components/sensors/SensorCard";
+import MultiSensorCard from "@/components/sensors/MultiSensorCard";
 import { sensorConfig } from "@/lib/config/sensors";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTranslations } from "@/lib/config/translations";
 import { useSensorData } from "@/hooks/useSensorData";
 import { getTimeStatus } from "@/lib/utils/time";
-import { SensorCardData } from "@/types/sensor";
+import { SensorCardData, MultiSensorCardData } from "@/types/sensor";
 
 // Dynamically import LocationMap to avoid SSR issues
 const LocationMap = dynamic(() => import("@/components/map/LocationMap"), {
@@ -49,6 +50,20 @@ export default function Home() {
       };
     });
 
+  // Build multi-sensor card data for grouped sensors
+  const multiSensorCardData: MultiSensorCardData[] = sensorConfig
+    .filter((sensor) => multiSensorCardSensors.includes(sensor.sensorId))
+    .map((sensor) => {
+      const timeStatus = getTimeStatus(lastUpdated[sensor.sensorId], t);
+
+      return {
+        config: sensor,
+        value: data[sensor.sensorId],
+        lastUpdated: lastUpdated[sensor.sensorId],
+        timeStatus,
+      };
+    });
+
   return (
     <>
       <header className="px-4 mt-16 mb-8 text-center sm:mt-24 sm:mb-12">
@@ -65,7 +80,7 @@ export default function Home() {
           <SensorCard key={card.sensorId} card={card} />
         ))}
         {/* Multi-Sensor Card Example */}
-        {/* {multiSensorCardData.length > 0 && (
+        {multiSensorCardData.length > 0 && (
           <MultiSensorCard
             title={
               language === "de"
@@ -74,7 +89,7 @@ export default function Home() {
             }
             sensors={multiSensorCardData}
           />
-        )} */}
+        )}
       </section>
 
       <section className="w-full px-4 mt-6 max-w-7xl sm:mt-8 sm:px-0">

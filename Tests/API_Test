@@ -1,0 +1,69 @@
+import requests
+import time
+import random
+import json
+
+# Konfiguration
+# Passe den Port (3000) an, falls deine Next.js App auf einem anderen Port läuft.
+API_URL = "http://localhost:3000/api/sensors/data"
+CLUSTER_NAME = "test-station-local"
+
+def get_sensible_values():
+    """Generiert realistische Testdaten für die Sensoren."""
+    return [
+        {
+            "sensor": "temperature",
+            # Temperatur zwischen 10.0 und 30.0 Grad
+            "value": round(random.uniform(10.0, 30.0), 1),
+            "unit": "°C"
+        },
+        {
+            "sensor": "humidity",
+            # Luftfeuchtigkeit zwischen 40% und 90%
+            "value": round(random.uniform(40.0, 90.0), 0),
+            "unit": "%"
+        },
+        {
+            "sensor": "air_pressure",
+            # Luftdruck zwischen 980 und 1040 hPa
+            "value": round(random.uniform(980.0, 1040.0), 0),
+            "unit": "hPa"
+        }
+    ]
+
+def send_data():
+    print(f"--- Starte Test-Loop (Ziel: {API_URL}) ---")
+    
+    try:
+        while True:
+            sensors = get_sensible_values()
+            
+            for item in sensors:
+                payload = {
+                    "cluster": CLUSTER_NAME,
+                    "sensor": item["sensor"],
+                    "value": item["value"],
+                    "unit": item["unit"]
+                    # 'ts' lassen wir weg, damit die API den aktuellen Zeitstempel setzt
+                }
+                
+                try:
+                    response = requests.post(API_URL, json=payload)
+                    
+                    if response.status_code == 201:
+                        print(f"[SUCCESS] {item['sensor']}: {item['value']} {item['unit']} gesendet.")
+                    else:
+                        print(f"[ERROR] API antwortete mit {response.status_code}: {response.text}")
+                        
+                except requests.exceptions.ConnectionError:
+                    print(f"[CONNECTION ERROR] Konnte {API_URL} nicht erreichen. Läuft der Server?")
+            
+            print("Warte 10 Sekunden...\n")
+            time.sleep(10)
+
+    except KeyboardInterrupt:
+        print("\nTest beendet.")
+
+if __name__ == "__main__":
+    # Stelle sicher, dass 'requests' installiert ist: pip install requests
+    send_data()
