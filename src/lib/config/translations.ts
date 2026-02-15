@@ -104,7 +104,7 @@ const translations: Record<Language, Translations> = {
       viewHistory: "Verlauf ansehen",
       projectText: "Ein Projekt des",
       projectLink: "Libertalia Kollektivs",
-      mapTitle: "Karte | 52° 31' 12.0288'' N",
+      mapTitle: "Karte |",
     },
     history: {
       title: "Verlauf",
@@ -183,7 +183,7 @@ const translations: Record<Language, Translations> = {
       viewHistory: "View History",
       projectText: "A project by the",
       projectLink: "Libertalia Collective",
-      mapTitle: "Map | 52° 31' 12.0288'' N",
+      mapTitle: "Map |",
     },
     history: {
       title: "History",

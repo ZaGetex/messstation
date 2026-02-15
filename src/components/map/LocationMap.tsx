@@ -15,8 +15,13 @@ type LatLng = {
   lng: number;
 };
 
-type LocationMapProps = {
-  query: string;
+export type LocationMapProps = {
+  /** Address/place query for geocoding when latLng is not provided */
+  query?: string;
+  /** Optional coordinates (e.g. from GNSS). When set, map shows this position and skips geocoding. */
+  latLng?: { lat: number; lng: number } | null;
+  /** Optional place name (Ort) from reverse-geocode. When set with latLng, used in popup and no extra reverse-geocode request. */
+  placeName?: string | null;
   height?: number;
   zoom?: number;
 };
@@ -40,6 +45,18 @@ const ZoomControl = dynamic(
   () => import("react-leaflet").then((m) => m.ZoomControl),
   { ssr: false }
 );
+
+/**
+ * Keeps the map view centered on the given center when it changes (e.g. after GNSS loads).
+ * MapContainer only uses center on initial mount; this component syncs the view on updates.
+ */
+function MapCenterSync({ center, zoom }: { center: LatLng; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([center.lat, center.lng], zoom);
+  }, [map, center.lat, center.lng, zoom]);
+  return null;
+}
 
 /**
  * Homing button component that centers the map on the original location
@@ -109,34 +126,64 @@ const createModernMarker = async () => {
 };
 
 export default function LocationMap({
-  query,
+  query = "",
+  latLng,
+  placeName: placeNameProp,
   height = 200,
   zoom = 12,
 }: LocationMapProps) {
   const [center, setCenter] = useState<LatLng | null>(null);
+  const [placeNameLocal, setPlaceNameLocal] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [customIcon, setCustomIcon] = useState<any>(null);
+
+  // Ort: from parent (reverse-geocoded from GNSS) or from map's own reverse-geocode
+  const placeName = placeNameProp ?? placeNameLocal;
+
+  // Set center from latLng immediately when available so the map never stays in loading state
+  useEffect(() => {
+    if (latLng && typeof latLng.lat === "number" && typeof latLng.lng === "number") {
+      setCenter({ lat: latLng.lat, lng: latLng.lng });
+      setError(null);
+    } else if (!query?.trim()) {
+      setCenter(null);
+    }
+  }, [latLng?.lat, latLng?.lng, query]);
 
   useEffect(() => {
     let cancelled = false;
 
-    const geocode = async () => {
-      setError(null);
+    const run = async () => {
       try {
-        // Create modern custom marker
         const icon = await createModernMarker();
-        if (!cancelled) {
-          setCustomIcon(icon);
+        if (!cancelled) setCustomIcon(icon);
+
+        // Coordinates from GNSS: center already set above; only fetch place name if parent didn't provide it
+        if (latLng && typeof latLng.lat === "number" && typeof latLng.lng === "number") {
+          if (placeNameProp) return;
+          setPlaceNameLocal(null);
+          const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latLng.lat}&lon=${latLng.lng}&zoom=18&addressdetails=1`;
+          const res = await fetch(url, {
+            headers: { "User-Agent": "messstation-web/0.1 (nextjs)" },
+          });
+          if (res.ok && !cancelled) {
+            const json: { display_name?: string } = await res.json();
+            if (json.display_name) setPlaceNameLocal(json.display_name);
+          }
+          return;
         }
 
-        // Geocode the query string using Nominatim
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          query
+        // Geocode query string only when no coordinates and query is a real search (not placeholder)
+        setError(null);
+        setPlaceNameLocal(null);
+        const trimmed = query.trim();
+        if (!trimmed || trimmed === "N/A") return;
+
+        const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          trimmed
         )}&limit=1`;
-        const res = await fetch(url, {
-          headers: {
-            "User-Agent": "messstation-web/0.1 (nextjs)",
-          },
+        const res = await fetch(searchUrl, {
+          headers: { "User-Agent": "messstation-web/0.1 (nextjs)" },
         });
         if (!res.ok) throw new Error(`Geocoding failed (${res.status})`);
         const json: Array<
@@ -152,19 +199,18 @@ export default function LocationMap({
             lat: parseFloat(json[0].lat),
             lng: parseFloat(json[0].lon),
           });
+          setPlaceNameLocal(trimmed);
         }
       } catch (e: any) {
-        if (!cancelled) {
-          setError(e?.message ?? "Unbekannter Fehler beim Geocoding");
-        }
+        if (!cancelled) setError(e?.message ?? "Unbekannter Fehler beim Geocoding");
       }
     };
 
-    geocode();
+    run();
     return () => {
       cancelled = true;
     };
-  }, [query]);
+  }, [query, latLng?.lat, latLng?.lng, placeNameProp]);
 
   const mapStyle = useMemo(() => ({ height }), [height]);
 
@@ -220,16 +266,17 @@ export default function LocationMap({
       >
         {/* Modern CartoDB Positron tile layer */}
         <TileLayer
-          attribution='&copy; <a href="https.www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           subdomains="abcd"
           maxZoom={20}
         />
+        <MapCenterSync center={center} zoom={zoom} />
         <Marker position={[center.lat, center.lng]} icon={customIcon}>
           <Popup className="modern-popup">
             <div className="p-2 text-center">
               <div className="font-semibold text-primary-600 dark:text-primary-200 text-sm">
-                {query}
+                {placeName || (latLng ? `${center.lat.toFixed(5)}°, ${center.lng.toFixed(5)}°` : query || "—")}
               </div>
             </div>
           </Popup>

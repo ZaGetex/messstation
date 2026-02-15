@@ -5,6 +5,7 @@
 
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import DownloadButton from "@/components/export/DownloadButton";
@@ -15,19 +16,28 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTranslations } from "@/lib/config/translations";
 import { useSensorData } from "@/hooks/useSensorData";
 import { getTimeStatus } from "@/lib/utils/time";
+import { decimalToDMS } from "@/lib/utils/coordinates";
 import { SensorCardData, MultiSensorCardData } from "@/types/sensor";
+import type { LocationMapProps } from "@/components/map/LocationMap";
 
 // Dynamically import LocationMap to avoid SSR issues
-const LocationMap = dynamic(() => import("@/components/map/LocationMap"), {
-  ssr: false,
-});
+const LocationMap = dynamic(
+  () => import("@/components/map/LocationMap").then((m) => m.default),
+  { ssr: false }
+) as React.ComponentType<LocationMapProps>;
 
 export default function Home() {
   const { language } = useLanguage();
   const t = useTranslations(language);
 
-  // Fetch sensor data using custom hook
-  const { data, lastUpdated } = useSensorData();
+  // Fetch sensor data using custom hook (includes GNSS position from cluster gnss)
+  const { data, lastUpdated, gnssPosition, gnssPlaceName } = useSensorData();
+
+  // Formatted coordinates for map title (DMS from GNSS lon/lat in deg)
+  const coordinatesText =
+    gnssPosition != null
+      ? decimalToDMS(gnssPosition.lat, gnssPosition.lng)
+      : null;
 
   // Define which sensors should be grouped in the multi-sensor card
   // Currently disabled, but can be enabled by uncommenting the MultiSensorCard below
@@ -40,10 +50,15 @@ export default function Home() {
     .map((sensor) => {
       const Icon = sensor.icon;
       const timeStatus = getTimeStatus(lastUpdated[sensor.sensorId], t);
+      // Location Card: show Ort from GNSS reverse-geocode when available, else DB location
+      const value =
+        sensor.sensorId === "location"
+          ? (gnssPlaceName ?? data.location ?? "N/A").trim() || "N/A"
+          : data[sensor.sensorId];
 
       return {
-        ...sensor, // Spread all properties from config
-        value: data[sensor.sensorId],
+        ...sensor,
+        value,
         lastUpdated: lastUpdated[sensor.sensorId],
         Icon,
         timeStatus,
@@ -94,10 +109,21 @@ export default function Home() {
 
       <section className="w-full px-4 mt-6 max-w-7xl sm:mt-8 sm:px-0">
         <h3 className="mb-3 text-xs font-semibold tracking-wide uppercase sm:text-sm text-primary-600 dark:text-primary-50">
-          {t.home.mapTitle}
+          {t.home.mapTitle}{" "}
+          {coordinatesText != null ? (
+            <span className="font-normal normal-case">{coordinatesText}</span>
+          ) : (
+            <span className="font-normal normal-case text-primary-500 dark:text-primary-200">
+              —
+            </span>
+          )}
         </h3>
-        {/* TODO: Dynamic coordinates from database */}
-        <LocationMap query={data.location} height={280} />
+        <LocationMap
+          query={data.location}
+          latLng={gnssPosition}
+          placeName={gnssPlaceName}
+          height={280}
+        />
       </section>
 
       <section className="flex flex-col gap-4 px-4 mt-12 mb-8 sm:gap-6 sm:mt-16 sm:flex-row sm:px-0">

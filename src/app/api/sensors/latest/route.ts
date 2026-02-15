@@ -28,16 +28,31 @@ export async function GET() {
       orderBy: { ts: "desc" },
     });
 
+    // Latest GNSS position (cluster=gnss, sensor=lon / sensor=lat in deg)
+    const gnssLonQuery = prisma.sensorData.findFirst({
+      where: { cluster: "gnss", sensor: "lon" },
+      orderBy: { ts: "desc" },
+    });
+    const gnssLatQuery = prisma.sensorData.findFirst({
+      where: { cluster: "gnss", sensor: "lat" },
+      orderBy: { ts: "desc" },
+    });
+
     // Run all queries in parallel for better performance
-    const results = await Promise.all([...sensorQueries, locationQuery]);
+    const results = await Promise.all([
+      ...sensorQueries,
+      locationQuery,
+      gnssLonQuery,
+      gnssLatQuery,
+    ]);
 
     // Dynamically build the response object
     const response: LatestSensorDataResponse = {};
     let i = 0;
     for (const sensor of sensorConfig) {
       if (sensor.sensorId === "location") {
-        // Handle location query (it's the last one in the results array)
-        const locationData = results[results.length - 1];
+        // Handle location query (index: sensorQueries.length)
+        const locationData = results[sensorQueries.length];
         response.location = locationData
           ? {
               value: locationData.unit || "", // Location stored in unit field
@@ -54,8 +69,27 @@ export async function GET() {
               ts: sensorData.ts.toISOString(),
             }
           : null;
-        i++; // Increment index for results array
+        i++;
       }
+    }
+
+    // GNSS position (cluster gnss: lon, lat in deg)
+    const gnssLon = results[results.length - 2];
+    const gnssLat = results[results.length - 1];
+    if (gnssLon && gnssLat) {
+      response.gnss_lon = {
+        value: gnssLon.value,
+        unit: gnssLon.unit ?? "deg",
+        ts: gnssLon.ts.toISOString(),
+      };
+      response.gnss_lat = {
+        value: gnssLat.value,
+        unit: gnssLat.unit ?? "deg",
+        ts: gnssLat.ts.toISOString(),
+      };
+    } else {
+      response.gnss_lon = null;
+      response.gnss_lat = null;
     }
 
     return NextResponse.json(response);
