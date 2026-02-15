@@ -1,13 +1,19 @@
 /**
  * API route: POST /api/sensors/data
  * Creates a new sensor data entry
- * 
+ *
  * API route: GET /api/sensors/data
  * Fetches sensor data with optional filtering
+ *
+ * All timestamps use Europe/Berlin timezone.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
+import {
+  parseTimestampForStorage,
+  formatTimestampBerlin,
+} from "@/lib/utils/timezone";
 
 /**
  * POST handler for creating sensor data
@@ -24,10 +30,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse timestamp if provided, otherwise use current time
-    const timestamp = body.ts ? new Date(body.ts) : new Date();
+    // Parse timestamp: Berlin timezone if no TZ in string, else use as-is
+    const timestamp = parseTimestampForStorage(body.ts);
 
-    // Create sensor data entry
+    // Create sensor data entry (stored in UTC in DB)
     const sensorData = await prisma.sensorData.create({
       data: {
         cluster: body.cluster,
@@ -38,10 +44,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Return timestamp in Berlin timezone for consistent display
+    const responseData = {
+      ...sensorData,
+      ts: formatTimestampBerlin(sensorData.ts),
+    };
+
     return NextResponse.json(
       {
         message: "Sensor data saved successfully",
-        data: sensorData,
+        data: responseData,
       },
       { status: 201 }
     );
