@@ -75,7 +75,7 @@ export function Logo2({
       className={`flex items-center justify-center bg-gradient-to-br from-accent-dark to-primary-300 text-white font-bold rounded-lg ${className}`}
       style={{ width, height }}
     >
-      <span className="text-sm">L2</span>
+      <span className="text-sm">Barkasse</span>
     </div>
   );
 
