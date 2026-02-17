@@ -33,7 +33,14 @@ export default function PasswordPage() {
       });
 
       if (response.ok) {
-        // Login erfolgreich – zurück zum Dashboard
+        // Login erfolgreich – komplette Seite neu laden,
+        // damit Logos und andere Ressourcen frisch geladen werden.
+        if (typeof window !== "undefined") {
+          window.location.href = "/";
+          return;
+        }
+
+        // Fallback (sollte im Browser eigentlich nicht nötig sein)
         router.push("/");
         router.refresh();
       } else {
