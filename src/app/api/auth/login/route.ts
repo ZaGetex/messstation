@@ -33,12 +33,17 @@ export async function POST(request: Request) {
     );
   }
 
+  // In Produktion nur dann "secure" setzen, wenn die Anfrage wirklich über HTTPS kam.
+  // Viele Heim-/Test-Setups laufen nur über HTTP, dann würde ein "secure"-Cookie nicht gespeichert.
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const isHttps = forwardedProto === "https";
+
   const response = NextResponse.json({ success: true });
 
   // Setze ein HttpOnly-Cookie, das von der Middleware geprüft wird
   response.cookies.set("site_auth", "1", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isHttps,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 8, // 8 Stunden
